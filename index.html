@@ -62,7 +62,7 @@ body {
 
 <body class="min-h-screen flex items-center justify-center text-white">
 
-<div id="custom-alert-banner" class="fixed top-0 left-1/2 transform -translate-x-1/2 mt-4 p-3 rounded-lg shadow-xl text-center text-white font-bold transition-opacity duration-1000 opacity-0 z-50 pointer-events-none" style="min-width: 300px; background-color: #10b981; border: 2px solid #34d399;">
+<div id="custom-alert-banner" class="fixed top-0 left-1/2 transform -translate-x-1/2 mt-4 p-3 rounded-lg shadow-xl text-center text-white font-bold transition-opacity duration-1000 opacity-0 z-50 pointer-events-none" style="min-width: 300px;">
     </div>
 <div class="bg-[var(--card-bg)] p-6 rounded-xl w-full max-w-md shadow-2xl border border-blue-700/50">
     <h1 class="text-2xl font-bold mb-4 text-cyan-400">⚡ Lightning Alert Monitoring</h1>
@@ -97,7 +97,7 @@ body {
         </button>
 
         <button id="simulate-alert-btn" disabled class="w-full bg-orange-500/80 p-3 rounded-lg font-semibold app-button hover:bg-orange-500 transition">
-            3. Simulate Alert
+            3. Simulate Alert (Siren)
         </button>
 
         <button id="stop-monitor-btn" disabled class="w-full bg-red-600/80 p-3 rounded-lg font-semibold app-button hover:bg-red-600 transition disabled:opacity-50 disabled:cursor-not-allowed">
@@ -110,6 +110,7 @@ body {
 const CHECK_INTERVAL_MS = 30000; // 30s
 let monitorInterval = null;
 let isAlertActive = false; 
+let isSimulatingAlert = false; 
 
 // DOM Elements
 const statusMessage = document.getElementById("status-message");
@@ -122,14 +123,20 @@ const timeSpan = document.getElementById("current-time-display");
 const permissionSpan = document.getElementById("current-permission");
 
 // =========================================================
-// Custom Banner Alert Function
-function showCustomBanner(message) {
+// Custom Banner Alert Function (UPDATED to accept colors)
+function showCustomBanner(message, bgColor = "#10b981", borderColor = "#34d399") {
     const banner = document.getElementById("custom-alert-banner");
     banner.innerHTML = message; 
     
+    // Set dynamic styles
+    banner.style.backgroundColor = bgColor;
+    banner.style.borderColor = borderColor;
+
+    // Show the banner
     banner.classList.remove("opacity-0");
     banner.classList.add("opacity-100");
 
+    // Hide the banner after 4 seconds (4000ms)
     setTimeout(() => {
         banner.classList.remove("opacity-100");
         banner.classList.add("opacity-0");
@@ -160,12 +167,8 @@ function updateStatus(text, color, pulse=false, symbol="") {
     ========================================================= */
 
 let audioContext = null;
-
-// Siren Nodes (For Pulsing Alert)
 let ringOscillator = null;
 let ringGain = null;
-
-// All Clear Nodes (For Reassuring Tone)
 let clearOscillator = null;
 let clearGain = null;
 
@@ -189,7 +192,6 @@ function initAudioOnce() {
     ringOscillator.type = "sine";
     ringGain = audioContext.createGain();
     ringGain.gain.value = 0; 
-
     ringOscillator.connect(ringGain);
     ringGain.connect(audioContext.destination);
     ringOscillator.start(0); 
@@ -200,14 +202,12 @@ function initAudioOnce() {
     clearOscillator.type = 'sawtooth'; 
     clearGain = audioContext.createGain();
     clearGain.gain.value = 0;
-
     clearOscillator.connect(clearGain);
     clearGain.connect(audioContext.destination);
     clearOscillator.start(0); 
 }
 
 function stopSound() {
-    // Stops both siren and clear tone by zeroing out their gain schedules
     const now = audioContext.currentTime;
     
     if (ringGain) {
@@ -222,7 +222,6 @@ function stopSound() {
     console.log("Audio alert stopped.");
 }
 
-// Fixed duration to 3000ms (3 seconds) and forced stop
 function playPhoneRing(durationMs = 3000) { 
     initAudioOnce(); 
     resumeAudioContext(); 
@@ -231,7 +230,6 @@ function playPhoneRing(durationMs = 3000) {
 
     const now = audioContext.currentTime;
     
-    // Safety check: Stop the clear tone before starting siren
     if (clearGain) {
         clearGain.gain.cancelScheduledValues(now);
         clearGain.gain.setValueAtTime(0, now);
@@ -244,7 +242,6 @@ function playPhoneRing(durationMs = 3000) {
     const end = t + durationMs / 1000;
     const ringInterval = 0.4; 
 
-    // Schedule the pulsing sound
     while (t < end) {
         ringGain.gain.setValueAtTime(0.5, t);
         t += ringInterval / 2;
@@ -255,49 +252,42 @@ function playPhoneRing(durationMs = 3000) {
         }
     }
     
-    // Ensure siren stops exactly at the 3-second mark
     ringGain.gain.setValueAtTime(0, end);
 }
 
-/**
- * Plays a distinct, 3-second long tone for the All Clear status.
- */
 function playAllClearTone(durationSec = 3) {
     initAudioOnce();
     resumeAudioContext(); 
     
     if (!clearGain || audioContext.state !== 'running') return;
     
-    console.log("Attempting to play ALL CLEAR tone for " + durationSec + " seconds."); // Diagnostic
     const now = audioContext.currentTime;
     
-    // Safety check: Stop the siren before starting clear tone
     if (ringGain) {
         ringGain.gain.cancelScheduledValues(now);
         ringGain.gain.setValueAtTime(0, now);
     }
     
-    // Clear previous schedules on clear tone gain and set initial volume to 0
     clearGain.gain.cancelScheduledValues(now);
     clearGain.gain.setValueAtTime(0, now);
     
     const end = now + durationSec;
     
-    // Tone Pattern: Gentle fade in and slow, long fade out over 3 seconds
     clearGain.gain.linearRampToValueAtTime(0.4, now + 0.1); 
-    
-    // Schedule the volume to fade to near-zero over the duration
     clearGain.gain.linearRampToValueAtTime(0.0001, end); 
 }
 
 
 // =========================================================
-// ALERT CONTROL FUNCTIONS
+// ALERT CONTROL FUNCTIONS (UPDATED)
 
 function triggerAlert(forecast="Thunderstorm detected") {
     isAlertActive = true; 
     playPhoneRing(); 
     updateStatus("LIGHTNING ALERT", "bg-red-600", true, "🚨⛈️");
+
+    // ✅ NEW: Show red custom banner for the alert
+    showCustomBanner(`⚡️ LIGHTNING ALERT: ${forecast} ⚡️`, "#dc2626", "#ef4444"); 
 
     if(Notification.permission === "granted") {
         new Notification("Lightning Alert", {
@@ -311,10 +301,11 @@ function clearAlert() {
     stopSound(); 
     isAlertActive = false; 
 
-    // ✅ Play the 3-second "All Clear" tone
     playAllClearTone(); 
 
-    showCustomBanner("All Clear! Situation safe. Monitoring continues. 🎉");
+    // ✅ UPDATED: Show green custom banner for the clear
+    showCustomBanner("All Clear! Situation safe. Monitoring continues. 🎉", "#10b981", "#34d399");
+
     updateStatus("ALL CLEAR: Situation Safe", "bg-yellow-500", false, "🔔✨");
 
     if(Notification.permission === "granted") {
@@ -376,6 +367,9 @@ function startMonitor() {
     startBtn.disabled = true;
     stopBtn.disabled = false;
     simulateBtn.disabled = true;
+    
+    isSimulatingAlert = false;
+    simulateBtn.textContent = "3. Simulate Alert (Siren)";
 }
 
 function stopMonitor() {
@@ -392,7 +386,7 @@ function stopMonitor() {
 }
 
 // =========================================================
-// 🔔 NOTIFICATION PERMISSION FLOW (FIXED)
+// 🔔 NOTIFICATION PERMISSION FLOW
 function requestPermission() {
     if(!("Notification" in window)){
         console.error("This browser does not support notifications.");
@@ -403,7 +397,7 @@ function requestPermission() {
         return;
     }
     
-    // ✅ FIX: Disable button immediately to prevent repeat clicks and visual clutter
+    // Disable button immediately to prevent repeat prompts
     requestBtn.disabled = true; 
     requestBtn.textContent = "Requesting..."; 
 
@@ -413,14 +407,13 @@ function requestPermission() {
             permissionSpan.className = "text-green-400 font-medium";
             startBtn.disabled = false;
             simulateBtn.disabled = false;
-            requestBtn.textContent = "Permission Granted"; // Stays disabled
+            requestBtn.textContent = "Permission Granted"; 
         } else if(permission === "denied"){
             permissionSpan.className = "text-red-400 font-medium";
-            requestBtn.textContent = "Permission Denied"; // Stays disabled
+            requestBtn.textContent = "Permission Denied"; 
         } else {
-            // Permission is 'default' (prompt was dismissed/ignored)
             permissionSpan.className = "text-yellow-400 font-medium";
-            requestBtn.textContent = "Prompt Ignored/Default"; // Stays disabled for this session
+            requestBtn.textContent = "Prompt Ignored/Default"; 
         }
     });
 }
@@ -435,11 +428,15 @@ simulateBtn.addEventListener("click", () => {
     initAudioOnce(); 
     resumeAudioContext();
 
-    if (isAlertActive) {
+    // Use a toggle to ensure both sounds are directly user-initiated
+    if (isSimulatingAlert) {
         clearAlert(); // Triggers 3s All Clear tone
-        setTimeout(() => triggerAlert("Simulated Lightning Alert: NEW"), 5000);
+        isSimulatingAlert = false;
+        simulateBtn.textContent = "3. Simulate Alert (Siren)";
     } else {
         triggerAlert("Simulated Lightning Alert"); // Triggers 3s Siren
+        isSimulatingAlert = true;
+        simulateBtn.textContent = "3. Simulate All Clear (Tone)";
     }
 });
 
@@ -461,7 +458,6 @@ window.onload = () => {
             requestBtn.disabled = true;
             requestBtn.textContent = "Permission Denied";
         } else {
-            // If default/prompt, the button remains enabled for the first click
             permissionSpan.className = "text-yellow-400 font-medium";
             startBtn.disabled = true;
             simulateBtn.disabled = true;
@@ -473,11 +469,4 @@ window.onload = () => {
         requestBtn.textContent = "Notifications Unsupported";
     }
 
-    updateStatus("Awaiting Start", "bg-gray-500", false, "⚪");
-
-    initAudioOnce();
-};
-</script>
-
-</body>
-</html>
+    updateStatus("Awaiting Start", "
