@@ -95,11 +95,15 @@ body {
         <button id="start-monitor-btn" disabled class="w-full bg-green-600/80 p-3 rounded-lg font-semibold app-button hover:bg-green-600 transition">
             2. Start Monitor
         </button>
-
-        <button id="simulate-alert-btn" disabled class="w-full bg-orange-500/80 p-3 rounded-lg font-semibold app-button hover:bg-orange-500 transition">
-            3. Simulate Alert (Siren)
-        </button>
-
+        
+        <div class="flex space-x-3">
+            <button id="simulate-lightning-btn" disabled class="w-1/2 bg-red-700/80 p-3 rounded-lg font-semibold app-button hover:bg-red-700 transition">
+                3. Simulate Lightning (Siren)
+            </button>
+            <button id="simulate-all-clear-btn" disabled class="w-1/2 bg-green-700/80 p-3 rounded-lg font-semibold app-button hover:bg-green-700 transition">
+                4. Simulate All Clear (Tone)
+            </button>
+        </div>
         <button id="stop-monitor-btn" disabled class="w-full bg-red-600/80 p-3 rounded-lg font-semibold app-button hover:bg-red-600 transition disabled:opacity-50 disabled:cursor-not-allowed">
             Stop Monitor
         </button>
@@ -110,20 +114,22 @@ body {
 const CHECK_INTERVAL_MS = 30000; // 30s
 let monitorInterval = null;
 let isAlertActive = false; 
-let isSimulatingAlert = false; 
+// isSimulatingAlert state variable is now removed
 
 // DOM Elements
 const statusMessage = document.getElementById("status-message");
 const statusIndicator = document.getElementById("status-indicator");
 const startBtn = document.getElementById("start-monitor-btn");
 const stopBtn = document.getElementById("stop-monitor-btn");
-const simulateBtn = document.getElementById("simulate-alert-btn");
+// Updated DOM element mappings
+const simulateLightningBtn = document.getElementById("simulate-lightning-btn");
+const simulateAllClearBtn = document.getElementById("simulate-all-clear-btn");
 const requestBtn = document.getElementById("request-permission-btn");
 const timeSpan = document.getElementById("current-time-display");
 const permissionSpan = document.getElementById("current-permission");
 
 // =========================================================
-// Custom Banner Alert Function (Handles Color and Message)
+// Custom Banner Alert Function
 function showCustomBanner(message, bgColor = "#10b981", borderColor = "#34d399") {
     const banner = document.getElementById("custom-alert-banner");
     banner.innerHTML = message; 
@@ -283,7 +289,7 @@ function triggerAlert(forecast="Thunderstorm detected") {
     playPhoneRing(); 
     updateStatus("LIGHTNING ALERT", "bg-red-600", true, "🚨⛈️");
 
-    // ✅ UPDATED: New custom message for Lightning Alert
+    // Custom message for Lightning Alert
     showCustomBanner("🚨 LIGHTNING ALERT NOW. TURN ON BLINKER & POST MESSAGE TO SPORTS GROUP", "#dc2626", "#ef4444"); 
 
     if(Notification.permission === "granted") {
@@ -350,7 +356,7 @@ async function checkForecast() {
 }
 
 // =========================================================
-// MONITOR CONTROL & PERMISSION FLOW 
+// MONITOR CONTROL 
 function startMonitor() {
     initAudioOnce(); 
     resumeAudioContext(); 
@@ -360,9 +366,9 @@ function startMonitor() {
     monitorInterval = setInterval(checkForecast, CHECK_INTERVAL_MS);
     startBtn.disabled = true;
     stopBtn.disabled = false;
-    simulateBtn.disabled = true;
-    isSimulatingAlert = false;
-    simulateBtn.textContent = "3. Simulate Alert (Siren)";
+    // Disable both simulation buttons while monitoring
+    simulateLightningBtn.disabled = true;
+    simulateAllClearBtn.disabled = true;
 }
 
 function stopMonitor() {
@@ -373,9 +379,13 @@ function stopMonitor() {
     updateStatus("Stopped", "bg-gray-500", false, "🛑");
     startBtn.disabled = false;
     stopBtn.disabled = true;
-    simulateBtn.disabled = false;
+    // Enable both simulation buttons when monitoring stops
+    simulateLightningBtn.disabled = false;
+    simulateAllClearBtn.disabled = false;
 }
 
+// =========================================================
+// PERMISSION FLOW 
 function requestPermission() {
     if(!("Notification" in window)){
         console.error("This browser does not support notifications.");
@@ -394,7 +404,9 @@ function requestPermission() {
         if(permission === "granted"){
             permissionSpan.className = "text-green-400 font-medium";
             startBtn.disabled = false;
-            simulateBtn.disabled = false;
+            // Enable simulation buttons
+            simulateLightningBtn.disabled = false;
+            simulateAllClearBtn.disabled = false;
             requestBtn.textContent = "Permission Granted"; 
         } else if(permission === "denied"){
             permissionSpan.className = "text-red-400 font-medium";
@@ -412,21 +424,19 @@ requestBtn.addEventListener("click", requestPermission);
 startBtn.addEventListener("click", startMonitor);
 stopBtn.addEventListener("click", stopMonitor);
 
-simulateBtn.addEventListener("click", () => {
+// === NEW DEDICATED SIMULATION LISTENERS ===
+simulateLightningBtn.addEventListener("click", () => {
     initAudioOnce(); 
     resumeAudioContext();
-
-    // Toggle logic
-    if (isSimulatingAlert) {
-        clearAlert(); // Triggers 3s All Clear tone (Green Banner)
-        isSimulatingAlert = false;
-        simulateBtn.textContent = "3. Simulate Alert (Siren)";
-    } else {
-        triggerAlert("Simulated Lightning Alert"); // Triggers 3s Siren (Red Banner)
-        isSimulatingAlert = true;
-        simulateBtn.textContent = "3. Simulate All Clear (Tone)";
-    }
+    triggerAlert("Simulated Lightning Alert"); // Start the alert state
 });
+
+simulateAllClearBtn.addEventListener("click", () => {
+    initAudioOnce(); 
+    resumeAudioContext();
+    clearAlert(); // End the alert state
+});
+// ==========================================
 
 window.onload = () => {
     // Initial check for notification status
@@ -438,7 +448,9 @@ window.onload = () => {
         if (permission === "granted") {
             permissionSpan.className = "text-green-400 font-medium";
             startBtn.disabled = false;
-            simulateBtn.disabled = false;
+            // Enable simulation buttons
+            simulateLightningBtn.disabled = false;
+            simulateAllClearBtn.disabled = false;
             requestBtn.disabled = true;
             requestBtn.textContent = "Permission Granted";
         } else if (permission === "denied") {
@@ -448,7 +460,9 @@ window.onload = () => {
         } else {
             permissionSpan.className = "text-yellow-400 font-medium";
             startBtn.disabled = true;
-            simulateBtn.disabled = true;
+            // Disable simulation buttons
+            simulateLightningBtn.disabled = true;
+            simulateAllClearBtn.disabled = true;
         }
     } else {
         permissionSpan.textContent = "Unsupported";
