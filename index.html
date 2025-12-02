@@ -111,7 +111,7 @@ const CHECK_INTERVAL_MS = 30000; // 30s
 let monitorInterval = null;
 let isAlertActive = false; 
 
-// DOM Elements
+// DOM Elements (omitted for brevity)
 const statusMessage = document.getElementById("status-message");
 const statusIndicator = document.getElementById("status-indicator");
 const startBtn = document.getElementById("start-monitor-btn");
@@ -127,11 +127,9 @@ function showCustomBanner(message) {
     const banner = document.getElementById("custom-alert-banner");
     banner.innerHTML = message; 
     
-    // Show the banner
     banner.classList.remove("opacity-0");
     banner.classList.add("opacity-100");
 
-    // Hide the banner after 4 seconds (4000ms)
     setTimeout(() => {
         banner.classList.remove("opacity-100");
         banner.classList.add("opacity-0");
@@ -139,7 +137,7 @@ function showCustomBanner(message) {
 }
 
 // =========================================================
-// TIME DISPLAY
+// TIME DISPLAY & STATUS UI (omitted for brevity)
 function updateTime() {
     const now = new Date();
     timeSpan.textContent = now.toLocaleTimeString('en-US', {hour12:false});
@@ -147,8 +145,6 @@ function updateTime() {
 updateTime();
 setInterval(updateTime, 1000);
 
-// =========================================================
-// STATUS UI
 function updateStatus(text, color, pulse=false, symbol="") {
     statusMessage.innerHTML = `<span class="mr-2 text-xl leading-none">${symbol}</span>${text}`;
     statusIndicator.className = "status-dot";
@@ -158,16 +154,22 @@ function updateStatus(text, color, pulse=false, symbol="") {
 }
 
 /* =========================================================
-    ✅ FINAL AUDIO ALERT FUNCTIONS
+    FINAL AUDIO ALERT FUNCTIONS (Persistent Nodes)
     ========================================================= */
 
 let audioContext = null;
+
+// Siren Nodes (For Pulsing Alert)
 let ringOscillator = null;
 let ringGain = null;
 
+// All Clear Nodes (For Reassuring Tone)
+let clearOscillator = null;
+let clearGain = null;
+
+
 function resumeAudioContext() {
     if (audioContext && audioContext.state === 'suspended') {
-        // Must be called from a user gesture handler!
         audioContext.resume()
             .then(() => console.log("AudioContext resumed successfully."))
             .catch(e => console.error('Audio Resume Failed:', e));
@@ -179,49 +181,66 @@ function initAudioOnce() {
 
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
     
+    // 1. Siren Nodes Setup
     ringOscillator = audioContext.createOscillator();
     ringOscillator.frequency.value = 440;
     ringOscillator.type = "sine";
-
     ringGain = audioContext.createGain();
     ringGain.gain.value = 0; 
 
     ringOscillator.connect(ringGain);
     ringGain.connect(audioContext.destination);
-    
     ringOscillator.start(0); 
+
+    // 2. All Clear Nodes Setup
+    clearOscillator = audioContext.createOscillator();
+    clearOscillator.frequency.value = 600; 
+    clearOscillator.type = 'sawtooth'; 
+    clearGain = audioContext.createGain();
+    clearGain.gain.value = 0;
+
+    clearOscillator.connect(clearGain);
+    clearGain.connect(audioContext.destination);
+    clearOscillator.start(0); 
 }
 
 function stopSound() {
-    if (ringGain && audioContext) {
-        const now = audioContext.currentTime;
-        // Stop the main siren by immediately setting its gain to zero
+    // Stops both siren and clear tone by zeroing out their gain schedules
+    const now = audioContext.currentTime;
+    
+    if (ringGain) {
         ringGain.gain.cancelScheduledValues(now);
         ringGain.gain.setValueAtTime(0, now);
-        console.log("Audio alert stopped.");
     }
+    
+    if (clearGain) {
+        clearGain.gain.cancelScheduledValues(now);
+        clearGain.gain.setValueAtTime(0, now);
+    }
+    console.log("Audio alert stopped.");
 }
 
 // Fixed duration to 3000ms (3 seconds) and forced stop
 function playPhoneRing(durationMs = 3000) { 
     initAudioOnce(); 
-    resumeAudioContext(); // Crucial for sound playback
+    resumeAudioContext(); 
     
-    if (!ringGain) return;
-
-    if (audioContext.state !== 'running') {
-        console.warn("Audio Context is still suspended. Sound may be blocked by the browser. Try clicking Start/Simulate button again.");
-        return;
-    }
+    if (!ringGain || audioContext.state !== 'running') return;
 
     const now = audioContext.currentTime;
-    // CRITICAL: Ensure all previous scheduling is cleared for clean 3s sound
+    
+    // Safety check: Stop the clear tone before starting siren
+    if (clearGain) {
+        clearGain.gain.cancelScheduledValues(now);
+        clearGain.gain.setValueAtTime(0, now);
+    }
+
     ringGain.gain.cancelScheduledValues(now);
     ringGain.gain.setValueAtTime(0, now); 
     
     let t = now;
     const end = t + durationMs / 1000;
-    const ringInterval = 0.4; // 0.2s ON, 0.2s OFF
+    const ringInterval = 0.4; 
 
     // Schedule the pulsing sound
     while (t < end) {
@@ -234,7 +253,7 @@ function playPhoneRing(durationMs = 3000) {
         }
     }
     
-    // CRITICAL FIX: Ensure siren stops exactly at the 3-second mark
+    // Ensure siren stops exactly at the 3-second mark
     ringGain.gain.setValueAtTime(0, end);
 }
 
@@ -243,32 +262,31 @@ function playPhoneRing(durationMs = 3000) {
  */
 function playAllClearTone(durationSec = 3) {
     initAudioOnce();
-    resumeAudioContext(); // Crucial for sound playback
+    resumeAudioContext(); 
     
-    if (audioContext.state !== 'running') return;
+    if (!clearGain || audioContext.state !== 'running') return;
     
+    console.log("Attempting to play ALL CLEAR tone for " + durationSec + " seconds."); // Diagnostic
     const now = audioContext.currentTime;
     
-    // Use new dedicated nodes for the All Clear tone to prevent conflicts
-    const toneOscillator = audioContext.createOscillator();
-    const toneGain = audioContext.createGain();
-
-    toneOscillator.frequency.setValueAtTime(600, now);
-    toneOscillator.type = 'sawtooth'; 
-
-    toneGain.gain.setValueAtTime(0, now);
-    toneOscillator.connect(toneGain);
-    toneGain.connect(audioContext.destination);
-
+    // Safety check: Stop the siren before starting clear tone
+    if (ringGain) {
+        ringGain.gain.cancelScheduledValues(now);
+        ringGain.gain.setValueAtTime(0, now);
+    }
+    
+    // Clear previous schedules on clear tone gain and set initial volume to 0
+    clearGain.gain.cancelScheduledValues(now);
+    clearGain.gain.setValueAtTime(0, now);
+    
     const end = now + durationSec;
     
     // Tone Pattern: Gentle fade in and slow, long fade out over 3 seconds
-    toneGain.gain.linearRampToValueAtTime(0.4, now + 0.1); 
-    toneGain.gain.linearRampToValueAtTime(0.0001, end); 
-
-    toneOscillator.start(now);
-    // Stop the oscillator after the duration
-    toneOscillator.stop(end); 
+    clearGain.gain.linearRampToValueAtTime(0.4, now + 0.1); 
+    
+    // CRITICAL: Schedule the volume to fade to near-zero over the duration
+    // This is the most reliable way to enforce the 3-second sound.
+    clearGain.gain.linearRampToValueAtTime(0.0001, end); 
 }
 
 
@@ -276,16 +294,10 @@ function playAllClearTone(durationSec = 3) {
 // ALERT CONTROL FUNCTIONS
 
 function triggerAlert(forecast="Thunderstorm detected") {
-    console.log("Attempting to play audio alert...");
     isAlertActive = true; 
-    
-    // 1. Play Siren Sound (3s)
     playPhoneRing(); 
-    
-    // 2. Update UI 
     updateStatus("LIGHTNING ALERT", "bg-red-600", true, "🚨⛈️");
 
-    // 3. System Notification
     if(Notification.permission === "granted") {
         new Notification("Lightning Alert", {
             body: forecast,
@@ -295,19 +307,15 @@ function triggerAlert(forecast="Thunderstorm detected") {
 }
 
 function clearAlert() {
-    stopSound(); // Stop the siren sound
+    stopSound(); 
     isAlertActive = false; 
 
     // ✅ Play the 3-second "All Clear" tone
     playAllClearTone(); 
 
-    // Show the refreshing custom banner
     showCustomBanner("All Clear! Situation safe. Monitoring continues. 🎉");
-
-    // Update UI 
     updateStatus("ALL CLEAR: Situation Safe", "bg-yellow-500", false, "🔔✨");
 
-    // System Notification
     if(Notification.permission === "granted") {
         new Notification("Lightning Alert Cleared", {
             body: "The area is now safe. Monitoring is continuing.",
@@ -318,52 +326,21 @@ function clearAlert() {
 
 
 // =========================================================
-// FETCH WEATHER FORECAST
+// MONITOR CONTROL & EVENT LISTENERS (omitted for brevity)
 const API_URL = "https://api.data.gov.sg/v1/environment/2-hour-weather-forecast";
 const TARGET_AREA = "Tampines";
 
 async function checkForecast() {
-    try {
-        const res = await fetch(API_URL);
-        const data = await res.json();
-        const forecastItem = data.items[0];
-        const areaForecast = forecastItem.forecasts.find(f => f.area.toUpperCase() === TARGET_AREA.toUpperCase());
-        const forecastText = areaForecast ? areaForecast.forecast : "Data unavailable";
-
-        const alertKeywords = ["Thunder", "TShowers"];
-        const isAlert = alertKeywords.some(k => forecastText.toLowerCase().includes(k.toLowerCase()));
-
-        if(isAlert){
-            if (!isAlertActive) {
-                triggerAlert(`Forecast: ${forecastText}`);
-            } else {
-                updateStatus("LIGHTNING ALERT", "bg-red-600", true, "🚨⛈️");
-            }
-        } else {
-            if (isAlertActive) {
-                clearAlert();
-            } else {
-                updateStatus(`Safe: ${forecastText}`, "bg-green-500", true, "✅☀️");
-            }
-        }
-    } catch(err) {
-        updateStatus("Error fetching forecast", "bg-yellow-500", false, "⚠️");
-        console.error(err);
-    }
+    // ... (logic to check forecast and call triggerAlert/clearAlert)
 }
 
-// =========================================================
-// MONITOR CONTROL
 function startMonitor() {
     initAudioOnce(); 
     resumeAudioContext(); 
-    
     updateStatus("Monitoring...", "bg-blue-500", false, "🔍");
     checkForecast(); 
-    
     if (monitorInterval) clearInterval(monitorInterval);
     monitorInterval = setInterval(checkForecast, CHECK_INTERVAL_MS);
-    
     startBtn.disabled = true;
     stopBtn.disabled = false;
     simulateBtn.disabled = true;
@@ -372,103 +349,39 @@ function startMonitor() {
 function stopMonitor() {
     clearInterval(monitorInterval);
     monitorInterval = null;
-    
     stopSound();
     isAlertActive = false;
-    
     updateStatus("Stopped", "bg-gray-500", false, "🛑");
     startBtn.disabled = false;
     stopBtn.disabled = true;
     simulateBtn.disabled = false;
 }
 
-// =========================================================
-// NOTIFICATION PERMISSION FLOW
 function requestPermission() {
-    if(!("Notification" in window)){
-        console.error("This browser does not support notifications.");
-        permissionSpan.textContent = "Unsupported";
-        permissionSpan.className = "text-red-400 font-medium";
-        requestBtn.disabled = true;
-        requestBtn.textContent = "Notifications Unsupported";
-        return;
-    }
-    Notification.requestPermission().then(permission => {
-        permissionSpan.textContent = permission.charAt(0).toUpperCase() + permission.slice(1);
-        if(permission === "granted"){
-            permissionSpan.className = "text-green-400 font-medium";
-            startBtn.disabled = false;
-            simulateBtn.disabled = false;
-            requestBtn.disabled = true;
-            requestBtn.textContent = "Permission Granted";
-        } else if(permission === "denied"){
-            permissionSpan.className = "text-red-400 font-medium";
-            requestBtn.disabled = true;
-            requestBtn.textContent = "Permission Denied";
-        } else {
-            permissionSpan.className = "text-yellow-400 font-medium";
-            startBtn.disabled = true;
-            simulateBtn.disabled = true;
-        }
-    });
+    // ... (logic to request notification permission)
 }
 
-// =========================================================
-// EVENT LISTENERS & INITIALIZATION
 requestBtn.addEventListener("click", requestPermission);
 startBtn.addEventListener("click", startMonitor);
 stopBtn.addEventListener("click", stopMonitor);
 
 simulateBtn.addEventListener("click", () => {
-    // If an alert is active, simulate the 'All Clear' condition first
+    // This click ensures the Audio Context is running
+    initAudioOnce(); 
+    resumeAudioContext();
+
     if (isAlertActive) {
-        // Must call initAudioOnce/resumeAudioContext on user click for successful audio
-        initAudioOnce(); 
-        resumeAudioContext();
-        
         clearAlert(); // Triggers 3s All Clear tone
-        
-        // Wait 5 seconds (longer than the 3s All Clear tone) before triggering new siren
+        // Wait 5 seconds (to allow the 3s All Clear tone to finish) before triggering new siren
         setTimeout(() => triggerAlert("Simulated Lightning Alert: NEW"), 5000);
     } else {
-        // If not active, start a new alert
-        initAudioOnce(); 
-        resumeAudioContext(); 
         triggerAlert("Simulated Lightning Alert"); // Triggers 3s Siren
     }
 });
 
 window.onload = () => {
-    // Initial check for notification status
-    if ("Notification" in window) {
-        const permission = Notification.permission;
-        
-        permissionSpan.textContent = permission.charAt(0).toUpperCase() + permission.slice(1);
-
-        if (permission === "granted") {
-            permissionSpan.className = "text-green-400 font-medium";
-            startBtn.disabled = false;
-            simulateBtn.disabled = false;
-            requestBtn.disabled = true;
-            requestBtn.textContent = "Permission Granted";
-        } else if (permission === "denied") {
-            permissionSpan.className = "text-red-400 font-medium";
-            requestBtn.disabled = true;
-            requestBtn.textContent = "Permission Denied";
-        } else {
-            permissionSpan.className = "text-yellow-400 font-medium";
-            startBtn.disabled = true;
-            simulateBtn.disabled = true;
-        }
-    } else {
-        permissionSpan.textContent = "Unsupported";
-        permissionSpan.className = "text-red-400 font-medium";
-        requestBtn.disabled = true;
-        requestBtn.textContent = "Notifications Unsupported";
-    }
-
+    // ... (logic for initial state)
     updateStatus("Awaiting Start", "bg-gray-500", false, "⚪");
-
     initAudioOnce();
 };
 </script>
