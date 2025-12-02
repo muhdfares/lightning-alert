@@ -62,19 +62,14 @@ body {
 
 <body class="min-h-screen flex items-center justify-center text-white">
 
-<!-- Main container updated for a deeper dark mode look -->
 <div class="bg-[var(--card-bg)] p-6 rounded-xl w-full max-w-md shadow-2xl border border-blue-700/50">
-    <!-- Header color changed for a 'tech' feel -->
     <h1 class="text-2xl font-bold mb-4 text-cyan-400">⚡ Lightning Alert Monitoring</h1>
 
-    <!-- Status Box updated -->
     <div class="mb-4 flex justify-between items-center bg-gray-900/40 p-3 rounded-lg border border-blue-500/30">
-        <!-- Status message now includes symbol set by JS -->
         <span id="status-message" class="text-lg font-semibold"></span>
         <div id="status-indicator" class="status-dot bg-gray-500"></div>
     </div>
     
-    <!-- LOCATION AND TIME Info Boxes updated -->
     <div class="space-y-1 mb-4">
         <p class="text-sm bg-gray-900/40 p-2 rounded border border-gray-700/50">
             Local Time:
@@ -91,7 +86,6 @@ body {
     </p>
 
     <div class="space-y-3">
-        <!-- Buttons updated with app-button class and hover effects -->
         <button id="request-permission-btn" class="w-full bg-blue-600/80 p-3 rounded-lg font-semibold app-button hover:bg-blue-600 transition">
             1. Request Notification Permission
         </button>
@@ -113,7 +107,7 @@ body {
 <script>
 const CHECK_INTERVAL_MS = 30000; // 30s
 let monitorInterval = null;
-let isAlertActive = false; // NEW: Track if a lightning alert is currently active
+let isAlertActive = false; // Track if a lightning alert is currently active
 
 // DOM Elements
 const statusMessage = document.getElementById("status-message");
@@ -131,15 +125,12 @@ function updateTime() {
     const now = new Date();
     timeSpan.textContent = now.toLocaleTimeString('en-US', {hour12:false});
 }
-// Start immediate and set interval (keeping original structure)
 updateTime();
 setInterval(updateTime, 1000);
 
 // =========================================================
 // STATUS UI
-// Updated to accept a symbol argument and use innerHTML
 function updateStatus(text, color, pulse=false, symbol="") {
-    // Use innerHTML to combine symbol and text. text-xl makes the emoji stand out slightly.
     statusMessage.innerHTML = `<span class="mr-2 text-xl leading-none">${symbol}</span>${text}`;
     statusIndicator.className = "status-dot";
     statusIndicator.classList.add(color);
@@ -148,16 +139,13 @@ function updateStatus(text, color, pulse=false, symbol="") {
 }
 
 /* =========================================================
-    ✅ AUDIO ALERT (FIXED FOR RELIABILITY)
+    AUDIO ALERT 
     ========================================================= */
 
 let audioContext = null;
 let ringOscillator = null;
 let ringGain = null;
 
-/**
- * Resumes the AudioContext if it is suspended, ensuring audio plays after a user gesture.
- */
 function resumeAudioContext() {
     if (audioContext && audioContext.state === 'suspended') {
         audioContext.resume()
@@ -186,7 +174,6 @@ function initAudioOnce() {
     ringOscillator.start(0); 
 }
 
-// NEW FUNCTION: Stops the sound immediately
 function stopSound() {
     if (ringGain && audioContext) {
         // Fade out gain immediately to stop the sound instantly
@@ -235,7 +222,7 @@ function playPhoneRing(durationMs = 8000) {
         }
     }
     
-    // 3. Ensure sound stops exactly at the end time (This is now redundant since stopSound is called, but kept for logic)
+    // 3. Ensure sound stops exactly at the end time
     ringGain.gain.setValueAtTime(0, end);
 }
 
@@ -264,6 +251,9 @@ function triggerAlert(forecast="Thunderstorm detected") {
 function clearAlert() {
     stopSound(); // Stop the ringing sound
     isAlertActive = false; // Set alert to inactive
+
+    // --- NEW JAVASCRIPT ALERT POP-UP ADDED ---
+    alert("📢 ALL CLEAR! Lightning Alert has ended.");
 
     // Update UI - All Clear symbol, distinct background
     updateStatus("ALL CLEAR: Situation Safe", "bg-yellow-500", false, "🔔✨");
