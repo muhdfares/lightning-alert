@@ -62,6 +62,8 @@ body {
 
 <body class="min-h-screen flex items-center justify-center text-white">
 
+<div id="custom-alert-banner" class="fixed top-0 left-1/2 transform -translate-x-1/2 mt-4 p-3 rounded-lg shadow-xl text-center text-white font-bold transition-opacity duration-1000 opacity-0 z-50 pointer-events-none" style="min-width: 300px; background-color: #10b981; border: 2px solid #34d399;">
+    </div>
 <div class="bg-[var(--card-bg)] p-6 rounded-xl w-full max-w-md shadow-2xl border border-blue-700/50">
     <h1 class="text-2xl font-bold mb-4 text-cyan-400">⚡ Lightning Alert Monitoring</h1>
 
@@ -107,7 +109,7 @@ body {
 <script>
 const CHECK_INTERVAL_MS = 30000; // 30s
 let monitorInterval = null;
-let isAlertActive = false; // Track if a lightning alert is currently active
+let isAlertActive = false; 
 
 // DOM Elements
 const statusMessage = document.getElementById("status-message");
@@ -118,6 +120,23 @@ const simulateBtn = document.getElementById("simulate-alert-btn");
 const requestBtn = document.getElementById("request-permission-btn");
 const timeSpan = document.getElementById("current-time-display");
 const permissionSpan = document.getElementById("current-permission");
+
+// =========================================================
+// Custom Banner Alert Function
+function showCustomBanner(message) {
+    const banner = document.getElementById("custom-alert-banner");
+    banner.innerHTML = message; 
+    
+    // Show the banner
+    banner.classList.remove("opacity-0");
+    banner.classList.add("opacity-100");
+
+    // Hide the banner after 4 seconds (4000ms)
+    setTimeout(() => {
+        banner.classList.remove("opacity-100");
+        banner.classList.add("opacity-0");
+    }, 4000); 
+}
 
 // =========================================================
 // TIME DISPLAY
@@ -139,16 +158,13 @@ function updateStatus(text, color, pulse=false, symbol="") {
 }
 
 /* =========================================================
-    ✅ AUDIO ALERT (FINAL RELIABILITY FIX)
+    AUDIO ALERT FUNCTIONS
     ========================================================= */
 
 let audioContext = null;
 let ringOscillator = null;
 let ringGain = null;
 
-/**
- * Resumes the AudioContext if it is suspended, ensuring audio plays after a user gesture.
- */
 function resumeAudioContext() {
     if (audioContext && audioContext.state === 'suspended') {
         audioContext.resume()
@@ -162,24 +178,21 @@ function initAudioOnce() {
 
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
     
-    // Create and connect components once
     ringOscillator = audioContext.createOscillator();
     ringOscillator.frequency.value = 440;
     ringOscillator.type = "sine";
 
     ringGain = audioContext.createGain();
-    ringGain.gain.value = 0; // Start silenced
+    ringGain.gain.value = 0; 
 
     ringOscillator.connect(ringGain);
     ringGain.connect(audioContext.destination);
     
-    // Start the oscillator immediately, control volume with gain
     ringOscillator.start(0); 
 }
 
 function stopSound() {
     if (ringGain && audioContext) {
-        // Fade out gain immediately to stop the sound instantly
         const now = audioContext.currentTime;
         ringGain.gain.cancelScheduledValues(now);
         ringGain.gain.setValueAtTime(0, now);
@@ -187,11 +200,9 @@ function stopSound() {
     }
 }
 
-
-function playPhoneRing(durationMs = 8000) { 
-    initAudioOnce(); // Ensure context is ready
-    
-    // CRITICAL: Force resume here on every alert attempt
+// Changed default duration to 3000ms (3 seconds)
+function playPhoneRing(durationMs = 3000) { 
+    initAudioOnce(); 
     resumeAudioContext(); 
     
     if (!ringGain) return;
@@ -202,8 +213,6 @@ function playPhoneRing(durationMs = 8000) {
     }
 
     const now = audioContext.currentTime;
-    
-    // 1. Clear any pending gain changes and immediately set gain to 0 for a clean start
     ringGain.gain.cancelScheduledValues(now);
     ringGain.gain.setValueAtTime(0, now); 
     
@@ -211,34 +220,68 @@ function playPhoneRing(durationMs = 8000) {
     const end = t + durationMs / 1000;
     const ringInterval = 0.4; // 0.2s ON, 0.2s OFF
 
-    // 2. Schedule the ring pattern
     while (t < end) {
-        // Ring ON (Set to 0.5 volume)
         ringGain.gain.setValueAtTime(0.5, t);
         t += ringInterval / 2;
         
-        // Ring OFF (Set to 0 volume)
         if (t < end) {
             ringGain.gain.setValueAtTime(0, t);
             t += ringInterval / 2;
         }
     }
     
-    // 3. Ensure sound stops exactly at the end time
     ringGain.gain.setValueAtTime(0, end);
 }
+
+/**
+ * Plays a distinct, 3-second long tone for the All Clear status.
+ */
+// Changed default duration to 3 seconds
+function playAllClearTone(durationSec = 3) {
+    initAudioOnce();
+    resumeAudioContext();
+    
+    if (audioContext.state !== 'running') return;
+    
+    const now = audioContext.currentTime;
+    
+    const toneOscillator = audioContext.createOscillator();
+    const toneGain = audioContext.createGain();
+
+    // Use a different frequency and wave type (e.g., 600Hz Sawtooth)
+    toneOscillator.frequency.setValueAtTime(600, now);
+    toneOscillator.type = 'sawtooth'; 
+
+    toneGain.gain.setValueAtTime(0, now);
+    toneOscillator.connect(toneGain);
+    toneGain.connect(audioContext.destination);
+
+    // Tone Pattern: Gentle fade in and slow, long fade out over 3 seconds
+    const end = now + durationSec;
+    
+    // 1. Quick fade in to 0.4 volume
+    toneGain.gain.linearRampToValueAtTime(0.4, now + 0.1); 
+
+    // 2. Linear fade out over the rest of the duration
+    toneGain.gain.linearRampToValueAtTime(0.0001, end); 
+
+    toneOscillator.start(now);
+    // Stop the oscillator after the duration
+    toneOscillator.stop(end); 
+}
+
 
 // =========================================================
 // ALERT CONTROL FUNCTIONS
 
 function triggerAlert(forecast="Thunderstorm detected") {
     console.log("Attempting to play audio alert...");
-    isAlertActive = true; // Set alert to active
+    isAlertActive = true; 
     
-    // 1. Play Sound 
+    // 1. Play Siren Sound (defaults to 3s)
     playPhoneRing(); 
     
-    // 2. Update UI - Added symbol
+    // 2. Update UI 
     updateStatus("LIGHTNING ALERT", "bg-red-600", true, "🚨⛈️");
 
     // 3. System Notification
@@ -251,13 +294,16 @@ function triggerAlert(forecast="Thunderstorm detected") {
 }
 
 function clearAlert() {
-    stopSound(); // Stop the ringing sound
-    isAlertActive = false; // Set alert to inactive
+    stopSound(); // Stop the siren sound
+    isAlertActive = false; 
 
-    // --- JAVASCRIPT ALERT POP-UP ADDED ---
-    alert("📢 ALL CLEAR! Lightning Alert has ended.");
+    // Play the 3-second "All Clear" tone
+    playAllClearTone(); 
 
-    // Update UI - All Clear symbol, distinct background
+    // Show the refreshing custom banner
+    showCustomBanner("All Clear! Situation safe. Monitoring continues. 🎉");
+
+    // Update UI 
     updateStatus("ALL CLEAR: Situation Safe", "bg-yellow-500", false, "🔔✨");
 
     // System Notification
@@ -288,24 +334,18 @@ async function checkForecast() {
 
         if(isAlert){
             if (!isAlertActive) {
-                // NEW ALERT: Trigger only if not already active
                 triggerAlert(`Forecast: ${forecastText}`);
             } else {
-                // ALERT CONTINUES: Just update status to refresh/confirm
                 updateStatus("LIGHTNING ALERT", "bg-red-600", true, "🚨⛈️");
             }
         } else {
-            // If forecast is safe
             if (isAlertActive) {
-                // ALERT CLEARED: Transition from active alert to safe
                 clearAlert();
             } else {
-                // Status remains safe/monitoring
                 updateStatus(`Safe: ${forecastText}`, "bg-green-500", true, "✅☀️");
             }
         }
     } catch(err) {
-        // Updated status with error symbol
         updateStatus("Error fetching forecast", "bg-yellow-500", false, "⚠️");
         console.error(err);
     }
@@ -314,12 +354,11 @@ async function checkForecast() {
 // =========================================================
 // MONITOR CONTROL
 function startMonitor() {
-    initAudioOnce(); // Initialize audio context
-    resumeAudioContext(); // Ensure audio context is running
+    initAudioOnce(); 
+    resumeAudioContext(); 
     
-    // Updated status with monitoring symbol
     updateStatus("Monitoring...", "bg-blue-500", false, "🔍");
-    checkForecast(); // Immediate check
+    checkForecast(); 
     
     if (monitorInterval) clearInterval(monitorInterval);
     monitorInterval = setInterval(checkForecast, CHECK_INTERVAL_MS);
@@ -333,11 +372,9 @@ function stopMonitor() {
     clearInterval(monitorInterval);
     monitorInterval = null;
     
-    // NEW: Stop sound and reset alert state if monitoring is manually stopped
     stopSound();
     isAlertActive = false;
     
-    // Updated status with stopped symbol
     updateStatus("Stopped", "bg-gray-500", false, "🛑");
     startBtn.disabled = false;
     stopBtn.disabled = true;
@@ -348,7 +385,6 @@ function stopMonitor() {
 // NOTIFICATION PERMISSION FLOW
 function requestPermission() {
     if(!("Notification" in window)){
-        // Replaced alert with console log and status message (No alerts allowed)
         console.error("This browser does not support notifications.");
         permissionSpan.textContent = "Unsupported";
         permissionSpan.className = "text-red-400 font-medium";
@@ -380,18 +416,14 @@ requestBtn.addEventListener("click", requestPermission);
 startBtn.addEventListener("click", startMonitor);
 stopBtn.addEventListener("click", stopMonitor);
 
-// CRITICAL FIX: Ensure audio is activated on click for browser compatibility
 simulateBtn.addEventListener("click", () => {
-    // Check if an alert is already active before simulating a NEW alert
     if (isAlertActive) {
-        // If active, simulate the 'All Clear' condition first for testing the feature
         clearAlert();
-        // Wait a moment before triggering a new alert to clearly demonstrate the transition
-        setTimeout(() => triggerAlert("Simulated Lightning Alert: NEW"), 500);
+        // Trigger a new alert after the clear sound (3s) has played for testing the full cycle
+        setTimeout(() => triggerAlert("Simulated Lightning Alert: NEW"), 3500);
     } else {
-        // If not active, start a new alert
-        initAudioOnce(); // Ensure context is initialized
-        resumeAudioContext(); // Ensure context is running (unmuted)
+        initAudioOnce(); 
+        resumeAudioContext(); 
         triggerAlert("Simulated Lightning Alert");
     }
 });
@@ -401,7 +433,6 @@ window.onload = () => {
     if ("Notification" in window) {
         const permission = Notification.permission;
         
-        // Update permission display
         permissionSpan.textContent = permission.charAt(0).toUpperCase() + permission.slice(1);
 
         if (permission === "granted") {
@@ -415,7 +446,6 @@ window.onload = () => {
             requestBtn.disabled = true;
             requestBtn.textContent = "Permission Denied";
         } else {
-            // Default or prompt
             permissionSpan.className = "text-yellow-400 font-medium";
             startBtn.disabled = true;
             simulateBtn.disabled = true;
@@ -427,13 +457,12 @@ window.onload = () => {
         requestBtn.textContent = "Notifications Unsupported";
     }
 
-    // Set initial status using the new function
     updateStatus("Awaiting Start", "bg-gray-500", false, "⚪");
 
-    // Initialize audio context silently
     initAudioOnce();
 };
 </script>
 
 </body>
 </html>
+
