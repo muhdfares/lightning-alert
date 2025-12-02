@@ -1,4 +1,4 @@
-<!DOCTYPE TML>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -65,12 +65,9 @@ body {
 <div id="custom-alert-banner" class="fixed top-0 left-1/2 transform -translate-x-1/2 mt-4 p-3 rounded-lg shadow-xl text-center text-white font-bold transition-opacity duration-1000 opacity-0 z-50 pointer-events-none" style="min-width: 300px;">
     </div>
 <div class="bg-[var(--card-bg)] p-6 rounded-xl w-full max-w-md shadow-2xl border border-blue-700/50">
+    
     <h1 class="text-2xl font-bold mb-4 text-cyan-400">⚡ Lightning Alert Monitoring</h1>
 
-    <div id="quote-of-the-day" class="mb-4 p-3 rounded-lg bg-indigo-900/40 text-sm italic text-gray-300 border border-indigo-700/50">
-        <p class="font-bold text-indigo-300 mb-1">Quote of the Day:</p>
-        <p id="daily-quote-text">Loading inspiration...</p>
-    </div>
     <div class="mb-4 flex justify-between items-center bg-gray-900/40 p-3 rounded-lg border border-blue-500/30">
         <span id="status-message" class="text-lg font-semibold"></span>
         <div id="status-indicator" class="status-dot bg-gray-500"></div>
@@ -112,7 +109,12 @@ body {
             Stop Monitor
         </button>
     </div>
-</div>
+
+    <div id="quote-of-the-day" class="mt-4 p-3 rounded-lg bg-indigo-900/40 text-sm italic text-gray-300 border border-indigo-700/50">
+        <p class="font-bold text-indigo-300 mb-1">Quote of the Day:</p>
+        <p id="daily-quote-text">Loading inspiration...</p>
+    </div>
+    </div>
 
 <script>
 const CHECK_INTERVAL_MS = 30000; // 30s
@@ -129,7 +131,7 @@ const simulateAllClearBtn = document.getElementById("simulate-all-clear-btn");
 const requestBtn = document.getElementById("request-permission-btn");
 const timeSpan = document.getElementById("current-time-display");
 const permissionSpan = document.getElementById("current-permission");
-const dailyQuoteText = document.getElementById("daily-quote-text"); // ADDED
+const dailyQuoteText = document.getElementById("daily-quote-text");
 
 // =========================================================
 // DAILY QUOTE LOGIC
@@ -243,6 +245,7 @@ function resumeAudioContext() {
 function initAudioOnce() {
     if (audioContext) return;
 
+    // Use webkitAudioContext for better compatibility on older iOS/Safari
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
     
     // 1. Siren Nodes Setup
@@ -487,7 +490,7 @@ simulateLightningBtn.addEventListener("click", () => {
 });
 
 simulateAllClearBtn.addEventListener("click", () => {
-    initAudioContext(); 
+    initAudioOnce(); 
     resumeAudioContext();
     clearAlert(); // End the alert state
 });
