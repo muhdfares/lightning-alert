@@ -62,19 +62,14 @@ body {
 
 <body class="min-h-screen flex items-center justify-center text-white">
 
-<!-- Main container updated for a deeper dark mode look -->
 <div class="bg-[var(--card-bg)] p-6 rounded-xl w-full max-w-md shadow-2xl border border-blue-700/50">
-    <!-- Header color changed for a 'tech' feel -->
     <h1 class="text-2xl font-bold mb-4 text-cyan-400">⚡ Lightning Alert Monitoring</h1>
 
-    <!-- Status Box updated -->
     <div class="mb-4 flex justify-between items-center bg-gray-900/40 p-3 rounded-lg border border-blue-500/30">
-        <!-- Status message now includes symbol set by JS -->
         <span id="status-message" class="text-lg font-semibold"></span>
         <div id="status-indicator" class="status-dot bg-gray-500"></div>
     </div>
     
-    <!-- LOCATION AND TIME Info Boxes updated -->
     <div class="space-y-1 mb-4">
         <p class="text-sm bg-gray-900/40 p-2 rounded border border-gray-700/50">
             Local Time:
@@ -91,7 +86,6 @@ body {
     </p>
 
     <div class="space-y-3">
-        <!-- Buttons updated with app-button class and hover effects -->
         <button id="request-permission-btn" class="w-full bg-blue-600/80 p-3 rounded-lg font-semibold app-button hover:bg-blue-600 transition">
             1. Request Notification Permission
         </button>
@@ -131,13 +125,11 @@ function updateTime() {
     const now = new Date();
     timeSpan.textContent = now.toLocaleTimeString('en-US', {hour12:false});
 }
-// Start immediate and set interval (keeping original structure)
 updateTime();
 setInterval(updateTime, 1000);
 
 // =========================================================
 // STATUS UI
-// Updated to accept a symbol argument and use innerHTML
 function updateStatus(text, color, pulse=false, symbol="") {
     // Use innerHTML to combine symbol and text. text-xl makes the emoji stand out slightly.
     statusMessage.innerHTML = `<span class="mr-2 text-xl leading-none">${symbol}</span>${text}`;
@@ -147,17 +139,67 @@ function updateStatus(text, color, pulse=false, symbol="") {
     if(color.includes("green") && pulse) statusIndicator.classList.add("pulse-green");
 }
 
-/* =========================================================
-    ✅ AUDIO ALERT (FIXED FOR RELIABILITY)
-    ========================================================= */
+// =========================================================
+// ✅ NEW: iOS Detection and Guidance Functions (The Fix)
+// =========================================================
 
+/**
+ * Checks if the user is on an iOS device (iPhone, iPad, iPod).
+ */
+function isIOS() {
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isIPad = userAgent.includes('ipad');
+    const isIPhone = userAgent.includes('iphone');
+    const isIPod = userAgent.includes('ipod');
+    return isIPad || isIPhone || isIPod;
+}
+
+/**
+ * Displays a custom message guiding iOS users to add the app to their Home Screen.
+ */
+function displayIOSGuidance() {
+    // 1. Update Status Message
+    updateStatus("iOS PWA Required", "bg-yellow-600", false, "⚠️");
+    
+    // 2. Update Notification Status
+    permissionSpan.textContent = "iOS: Tap 'Share' > 'Add to Home Screen'";
+    permissionSpan.className = "text-yellow-400 font-medium";
+
+    // 3. Update Request Button to show the fix
+    requestBtn.textContent = "Requires Add to Home Screen";
+    requestBtn.disabled = true;
+    startBtn.disabled = true; // Disable start until PWA mode is active
+
+    // 4. Update the main container's status area with the instructions
+    let guidanceEl = document.getElementById('ios-guidance');
+    if (!guidanceEl) {
+        // Create the guidance element if it doesn't exist
+        guidanceEl = document.createElement('div');
+        guidanceEl.id = 'ios-guidance';
+        guidanceEl.className = 'mt-3 p-3 bg-red-900/40 border border-red-500/50 rounded-lg text-sm';
+        
+        // Find the main button container and insert guidance before it
+        const buttonContainer = document.querySelector('.space-y-3');
+        buttonContainer.parentNode.insertBefore(guidanceEl, buttonContainer);
+    }
+
+    guidanceEl.innerHTML = `
+        <p class="font-bold text-red-300">ACTION REQUIRED on iPhone/iPad:</p>
+        <p class="text-xs mt-1">
+            To enable **background monitoring** and **full notification** support, you must launch this app in PWA mode.<br><br>
+            1. Tap the **Share icon** (usually at the bottom of the browser).<br>
+            2. Select **'Add to Home Screen'** and launch the app from the new icon.
+        </p>
+    `;
+}
+
+// =========================================================
+// AUDIO ALERT (FIXED FOR RELIABILITY)
+// =========================================================
 let audioContext = null;
 let ringOscillator = null;
 let ringGain = null;
 
-/**
- * Resumes the AudioContext if it is suspended, ensuring audio plays after a user gesture.
- */
 function resumeAudioContext() {
     if (audioContext && audioContext.state === 'suspended') {
         audioContext.resume()
@@ -171,7 +213,6 @@ function initAudioOnce() {
 
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
     
-    // Create and connect components once
     ringOscillator = audioContext.createOscillator();
     ringOscillator.frequency.value = 440;
     ringOscillator.type = "sine";
@@ -182,14 +223,11 @@ function initAudioOnce() {
     ringOscillator.connect(ringGain);
     ringGain.connect(audioContext.destination);
     
-    // Start the oscillator immediately, control volume with gain
     ringOscillator.start(0); 
 }
 
-// NEW FUNCTION: Stops the sound immediately
 function stopSound() {
     if (ringGain && audioContext) {
-        // Fade out gain immediately to stop the sound instantly
         const now = audioContext.currentTime;
         ringGain.gain.cancelScheduledValues(now);
         ringGain.gain.setValueAtTime(0, now);
@@ -197,251 +235,46 @@ function stopSound() {
     }
 }
 
-
 function playPhoneRing(durationMs = 8000) { 
-    initAudioOnce(); // Ensure context is ready
-    
-    // Crucial: Move resume up to be the first step after init for immediate activation
+    initAudioOnce();
     resumeAudioContext(); 
     
-    if (!ringGain) return;
-
-    // Check if the context is still suspended (for debugging)
-    if (audioContext.state !== 'running') {
-        console.warn("Audio Context is still suspended. Sound may be blocked by the browser. Try clicking another button.");
+    if (!ringGain || audioContext.state !== 'running') {
+        console.warn("Audio Context not running. Sound blocked.");
         return;
     }
 
     const now = audioContext.currentTime;
-    
-    // 1. Clear any pending gain changes and immediately set gain to 0 for a clean start
     ringGain.gain.cancelScheduledValues(now);
     ringGain.gain.setValueAtTime(0, now); 
     
     let t = now;
     const end = t + durationMs / 1000;
-    const ringInterval = 0.4; // 0.2s ON, 0.2s OFF
+    const ringInterval = 0.4;
 
-    // 2. Schedule the ring pattern
     while (t < end) {
-        // Ring ON (Set to 0.5 volume)
         ringGain.gain.setValueAtTime(0.5, t);
         t += ringInterval / 2;
         
-        // Ring OFF (Set to 0 volume)
         if (t < end) {
             ringGain.gain.setValueAtTime(0, t);
             t += ringInterval / 2;
         }
     }
-    
-    // 3. Ensure sound stops exactly at the end time (This is now redundant since stopSound is called, but kept for logic)
     ringGain.gain.setValueAtTime(0, end);
 }
 
 // =========================================================
 // ALERT CONTROL FUNCTIONS
+// =========================================================
 
 function triggerAlert(forecast="Thunderstorm detected") {
     console.log("Attempting to play audio alert...");
-    isAlertActive = true; // Set alert to active
+    isAlertActive = true;
     
-    // 1. Play Sound 
     playPhoneRing(); 
     
-    // 2. Update UI - Added symbol
     updateStatus("LIGHTNING ALERT", "bg-red-600", true, "🚨⛈️");
 
-    // 3. System Notification
     if(Notification.permission === "granted") {
         new Notification("Lightning Alert", {
-            body: forecast,
-            icon: "https://placehold.co/64x64/ef4444/ffffff?text=⚡️"
-        });
-    }
-}
-
-function clearAlert() {
-    stopSound(); // Stop the ringing sound
-    isAlertActive = false; // Set alert to inactive
-
-    // Update UI - All Clear symbol, distinct background
-    updateStatus("ALL CLEAR: Situation Safe", "bg-yellow-500", false, "🔔✨");
-
-    // System Notification
-    if(Notification.permission === "granted") {
-        new Notification("Lightning Alert Cleared", {
-            body: "The area is now safe. Monitoring is continuing.",
-            icon: "https://placehold.co/64x64/facc15/000000?text=🔔"
-        });
-    }
-}
-
-
-// =========================================================
-// FETCH WEATHER FORECAST
-const API_URL = "https://api.data.gov.sg/v1/environment/2-hour-weather-forecast";
-const TARGET_AREA = "Tampines";
-
-async function checkForecast() {
-    try {
-        const res = await fetch(API_URL);
-        const data = await res.json();
-        const forecastItem = data.items[0];
-        const areaForecast = forecastItem.forecasts.find(f => f.area.toUpperCase() === TARGET_AREA.toUpperCase());
-        const forecastText = areaForecast ? areaForecast.forecast : "Data unavailable";
-
-        const alertKeywords = ["Thunder", "TShowers"];
-        const isAlert = alertKeywords.some(k => forecastText.toLowerCase().includes(k.toLowerCase()));
-
-        if(isAlert){
-            if (!isAlertActive) {
-                // NEW ALERT: Trigger only if not already active
-                triggerAlert(`Forecast: ${forecastText}`);
-            } else {
-                // ALERT CONTINUES: Just update status to refresh/confirm
-                updateStatus("LIGHTNING ALERT", "bg-red-600", true, "🚨⛈️");
-            }
-        } else {
-            // If forecast is safe
-            if (isAlertActive) {
-                // ALERT CLEARED: Transition from active alert to safe
-                clearAlert();
-            } else {
-                // Status remains safe/monitoring
-                updateStatus(`Safe: ${forecastText}`, "bg-green-500", true, "✅☀️");
-            }
-        }
-    } catch(err) {
-        // Updated status with error symbol
-        updateStatus("Error fetching forecast", "bg-yellow-500", false, "⚠️");
-        console.error(err);
-    }
-}
-
-// =========================================================
-// MONITOR CONTROL
-function startMonitor() {
-    initAudioOnce(); // Initialize audio context
-    resumeAudioContext(); // Ensure audio context is running
-    
-    // Updated status with monitoring symbol
-    updateStatus("Monitoring...", "bg-blue-500", false, "🔍");
-    checkForecast(); // Immediate check
-    
-    if (monitorInterval) clearInterval(monitorInterval);
-    monitorInterval = setInterval(checkForecast, CHECK_INTERVAL_MS);
-    
-    startBtn.disabled = true;
-    stopBtn.disabled = false;
-    simulateBtn.disabled = true;
-}
-
-function stopMonitor() {
-    clearInterval(monitorInterval);
-    monitorInterval = null;
-    
-    // NEW: Stop sound and reset alert state if monitoring is manually stopped
-    stopSound();
-    isAlertActive = false;
-    
-    // Updated status with stopped symbol
-    updateStatus("Stopped", "bg-gray-500", false, "🛑");
-    startBtn.disabled = false;
-    stopBtn.disabled = true;
-    simulateBtn.disabled = false;
-}
-
-// =========================================================
-// NOTIFICATION PERMISSION FLOW
-function requestPermission() {
-    if(!("Notification" in window)){
-        // Replaced alert with console log and status message (No alerts allowed)
-        console.error("This browser does not support notifications.");
-        permissionSpan.textContent = "Unsupported";
-        permissionSpan.className = "text-red-400 font-medium";
-        requestBtn.disabled = true;
-        requestBtn.textContent = "Notifications Unsupported";
-        return;
-    }
-    Notification.requestPermission().then(permission => {
-        permissionSpan.textContent = permission.charAt(0).toUpperCase() + permission.slice(1);
-        if(permission === "granted"){
-            permissionSpan.className = "text-green-400 font-medium";
-            startBtn.disabled = false;
-            simulateBtn.disabled = false;
-            requestBtn.disabled = true;
-            requestBtn.textContent = "Permission Granted";
-        } else if(permission === "denied"){
-            permissionSpan.className = "text-red-400 font-medium";
-            requestBtn.disabled = true;
-            requestBtn.textContent = "Permission Denied";
-        } else {
-            permissionSpan.className = "text-yellow-400 font-medium";
-        }
-    });
-}
-
-// =========================================================
-// EVENT LISTENERS & INITIALIZATION
-requestBtn.addEventListener("click", requestPermission);
-startBtn.addEventListener("click", startMonitor);
-stopBtn.addEventListener("click", stopMonitor);
-
-// CRITICAL FIX: Ensure audio is activated on click for browser compatibility
-simulateBtn.addEventListener("click", () => {
-    // Check if an alert is already active before simulating a NEW alert
-    if (isAlertActive) {
-        // If active, simulate the 'All Clear' condition first for testing the feature
-        clearAlert();
-        // Wait a moment before triggering a new alert to clearly demonstrate the transition
-        setTimeout(() => triggerAlert("Simulated Lightning Alert: NEW"), 500);
-    } else {
-        // If not active, start a new alert
-        initAudioOnce(); // Ensure context is initialized
-        resumeAudioContext(); // Ensure context is running (unmuted)
-        triggerAlert("Simulated Lightning Alert");
-    }
-});
-
-window.onload = () => {
-    // Initial check for notification status
-    if ("Notification" in window) {
-        const permission = Notification.permission;
-        
-        // Update permission display
-        permissionSpan.textContent = permission.charAt(0).toUpperCase() + permission.slice(1);
-
-        if (permission === "granted") {
-            permissionSpan.className = "text-green-400 font-medium";
-            startBtn.disabled = false;
-            simulateBtn.disabled = false;
-            requestBtn.disabled = true;
-            requestBtn.textContent = "Permission Granted";
-        } else if (permission === "denied") {
-            permissionSpan.className = "text-red-400 font-medium";
-            requestBtn.disabled = true;
-            requestBtn.textContent = "Permission Denied";
-        } else {
-            // Default or prompt
-            permissionSpan.className = "text-yellow-400 font-medium";
-            startBtn.disabled = true;
-            simulateBtn.disabled = true;
-        }
-    } else {
-        permissionSpan.textContent = "Unsupported";
-        permissionSpan.className = "text-red-400 font-medium";
-        requestBtn.disabled = true;
-        requestBtn.textContent = "Notifications Unsupported";
-    }
-
-    // Set initial status using the new function
-    updateStatus("Awaiting Start", "bg-gray-500", false, "⚪");
-
-    // Initialize audio context silently
-    initAudioOnce();
-};
-</script>
-
-</body>
-</html>
