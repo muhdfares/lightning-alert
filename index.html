@@ -139,13 +139,16 @@ function updateStatus(text, color, pulse=false, symbol="") {
 }
 
 /* =========================================================
-    AUDIO ALERT 
+    ✅ AUDIO ALERT (FINAL RELIABILITY FIX)
     ========================================================= */
 
 let audioContext = null;
 let ringOscillator = null;
 let ringGain = null;
 
+/**
+ * Resumes the AudioContext if it is suspended, ensuring audio plays after a user gesture.
+ */
 function resumeAudioContext() {
     if (audioContext && audioContext.state === 'suspended') {
         audioContext.resume()
@@ -188,14 +191,13 @@ function stopSound() {
 function playPhoneRing(durationMs = 8000) { 
     initAudioOnce(); // Ensure context is ready
     
-    // Crucial: Move resume up to be the first step after init for immediate activation
+    // CRITICAL: Force resume here on every alert attempt
     resumeAudioContext(); 
     
     if (!ringGain) return;
 
-    // Check if the context is still suspended (for debugging)
     if (audioContext.state !== 'running') {
-        console.warn("Audio Context is still suspended. Sound may be blocked by the browser. Try clicking another button.");
+        console.warn("Audio Context is still suspended. Sound may be blocked by the browser. Try clicking Start/Simulate button again.");
         return;
     }
 
@@ -252,7 +254,7 @@ function clearAlert() {
     stopSound(); // Stop the ringing sound
     isAlertActive = false; // Set alert to inactive
 
-    // --- NEW JAVASCRIPT ALERT POP-UP ADDED ---
+    // --- JAVASCRIPT ALERT POP-UP ADDED ---
     alert("📢 ALL CLEAR! Lightning Alert has ended.");
 
     // Update UI - All Clear symbol, distinct background
