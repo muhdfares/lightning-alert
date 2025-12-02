@@ -1,6 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
+    <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a1122">
+
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("service-worker.js")
+    .then(() => console.log("Service worker registered"));
+}
+
+// Request periodic background sync
+async function enableBackgroundSync() {
+  if ("periodicSync" in navigator.serviceWorker) {
+    const reg = await navigator.serviceWorker.ready;
+    try {
+      await reg.periodicSync.register("lightning-check", {
+        minInterval: 30 * 60 * 1000 // 30 minutes
+      });
+      console.log("Background sync enabled");
+    } catch (err) {
+      console.warn("Periodic sync unavailable:", err);
+    }
+  }
+}
+enableBackgroundSync();
+</script>
+    
+    
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Lightning Alert Monitoring</title>
