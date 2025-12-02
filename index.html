@@ -158,7 +158,7 @@ function updateStatus(text, color, pulse=false, symbol="") {
 }
 
 /* =========================================================
-    AUDIO ALERT FUNCTIONS
+    ✅ FINAL AUDIO ALERT FUNCTIONS
     ========================================================= */
 
 let audioContext = null;
@@ -167,6 +167,7 @@ let ringGain = null;
 
 function resumeAudioContext() {
     if (audioContext && audioContext.state === 'suspended') {
+        // Must be called from a user gesture handler!
         audioContext.resume()
             .then(() => console.log("AudioContext resumed successfully."))
             .catch(e => console.error('Audio Resume Failed:', e));
@@ -194,16 +195,17 @@ function initAudioOnce() {
 function stopSound() {
     if (ringGain && audioContext) {
         const now = audioContext.currentTime;
+        // Stop the main siren by immediately setting its gain to zero
         ringGain.gain.cancelScheduledValues(now);
         ringGain.gain.setValueAtTime(0, now);
         console.log("Audio alert stopped.");
     }
 }
 
-// Changed default duration to 3000ms (3 seconds)
+// Fixed duration to 3000ms (3 seconds) and forced stop
 function playPhoneRing(durationMs = 3000) { 
     initAudioOnce(); 
-    resumeAudioContext(); 
+    resumeAudioContext(); // Crucial for sound playback
     
     if (!ringGain) return;
 
@@ -213,6 +215,7 @@ function playPhoneRing(durationMs = 3000) {
     }
 
     const now = audioContext.currentTime;
+    // CRITICAL: Ensure all previous scheduling is cleared for clean 3s sound
     ringGain.gain.cancelScheduledValues(now);
     ringGain.gain.setValueAtTime(0, now); 
     
@@ -220,6 +223,7 @@ function playPhoneRing(durationMs = 3000) {
     const end = t + durationMs / 1000;
     const ringInterval = 0.4; // 0.2s ON, 0.2s OFF
 
+    // Schedule the pulsing sound
     while (t < end) {
         ringGain.gain.setValueAtTime(0.5, t);
         t += ringInterval / 2;
@@ -230,25 +234,25 @@ function playPhoneRing(durationMs = 3000) {
         }
     }
     
+    // CRITICAL FIX: Ensure siren stops exactly at the 3-second mark
     ringGain.gain.setValueAtTime(0, end);
 }
 
 /**
  * Plays a distinct, 3-second long tone for the All Clear status.
  */
-// Changed default duration to 3 seconds
 function playAllClearTone(durationSec = 3) {
     initAudioOnce();
-    resumeAudioContext();
+    resumeAudioContext(); // Crucial for sound playback
     
     if (audioContext.state !== 'running') return;
     
     const now = audioContext.currentTime;
     
+    // Use new dedicated nodes for the All Clear tone to prevent conflicts
     const toneOscillator = audioContext.createOscillator();
     const toneGain = audioContext.createGain();
 
-    // Use a different frequency and wave type (e.g., 600Hz Sawtooth)
     toneOscillator.frequency.setValueAtTime(600, now);
     toneOscillator.type = 'sawtooth'; 
 
@@ -256,13 +260,10 @@ function playAllClearTone(durationSec = 3) {
     toneOscillator.connect(toneGain);
     toneGain.connect(audioContext.destination);
 
-    // Tone Pattern: Gentle fade in and slow, long fade out over 3 seconds
     const end = now + durationSec;
     
-    // 1. Quick fade in to 0.4 volume
+    // Tone Pattern: Gentle fade in and slow, long fade out over 3 seconds
     toneGain.gain.linearRampToValueAtTime(0.4, now + 0.1); 
-
-    // 2. Linear fade out over the rest of the duration
     toneGain.gain.linearRampToValueAtTime(0.0001, end); 
 
     toneOscillator.start(now);
@@ -278,7 +279,7 @@ function triggerAlert(forecast="Thunderstorm detected") {
     console.log("Attempting to play audio alert...");
     isAlertActive = true; 
     
-    // 1. Play Siren Sound (defaults to 3s)
+    // 1. Play Siren Sound (3s)
     playPhoneRing(); 
     
     // 2. Update UI 
@@ -297,7 +298,7 @@ function clearAlert() {
     stopSound(); // Stop the siren sound
     isAlertActive = false; 
 
-    // Play the 3-second "All Clear" tone
+    // ✅ Play the 3-second "All Clear" tone
     playAllClearTone(); 
 
     // Show the refreshing custom banner
@@ -406,6 +407,8 @@ function requestPermission() {
             requestBtn.textContent = "Permission Denied";
         } else {
             permissionSpan.className = "text-yellow-400 font-medium";
+            startBtn.disabled = true;
+            simulateBtn.disabled = true;
         }
     });
 }
@@ -417,14 +420,21 @@ startBtn.addEventListener("click", startMonitor);
 stopBtn.addEventListener("click", stopMonitor);
 
 simulateBtn.addEventListener("click", () => {
+    // If an alert is active, simulate the 'All Clear' condition first
     if (isAlertActive) {
-        clearAlert();
-        // Trigger a new alert after the clear sound (3s) has played for testing the full cycle
-        setTimeout(() => triggerAlert("Simulated Lightning Alert: NEW"), 3500);
+        // Must call initAudioOnce/resumeAudioContext on user click for successful audio
+        initAudioOnce(); 
+        resumeAudioContext();
+        
+        clearAlert(); // Triggers 3s All Clear tone
+        
+        // Wait 5 seconds (longer than the 3s All Clear tone) before triggering new siren
+        setTimeout(() => triggerAlert("Simulated Lightning Alert: NEW"), 5000);
     } else {
+        // If not active, start a new alert
         initAudioOnce(); 
         resumeAudioContext(); 
-        triggerAlert("Simulated Lightning Alert");
+        triggerAlert("Simulated Lightning Alert"); // Triggers 3s Siren
     }
 });
 
@@ -465,4 +475,3 @@ window.onload = () => {
 
 </body>
 </html>
-
