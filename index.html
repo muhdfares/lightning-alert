@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lightning Alert Monitoring</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+/* --- PASTEL DARK COLOR VARIABLES --- */
+:root {
+    --bg-dark: #111827; /* Dark Slate Gray */
+    --card-bg: #1f2937; /* Slightly Lighter Slate for card */
+}
+body {
+    font-family: 'Inter', sans-serif;
+    /* Softened radial gradient for a deep, muted look */
+    background: radial-gradient(circle at center, #1e293b 0%, var(--bg-dark) 100%);
+    min-height: 100vh;
+}
+.status-dot {
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius:50%;
+    transition: all 0.3s;
+}
+/* Pulsing animations use Tailwind colors, which look softer against the dark background */
+.pulse-red {
+    animation: pulse-red 1.5s infinite;
+}
+@keyframes pulse-red {
+    /* Muted Red (Rose-600) */
+    0%{box-shadow:0 0 0 0 rgba(225, 29, 72, 1);} 
+    70%{box-shadow:0 0 0 15px rgba(225, 29, 72, 0);}
+    100%{box-shadow:0 0 0 0 rgba(225, 29, 72, 0);}
+}
+.pulse-green {
+    animation: pulse-green 1.5s infinite;
+}
+@keyframes pulse-green {
+    /* Muted Green (Emerald-500) */
+    0%{box-shadow:0 0 0 0 rgba(16, 185, 129, 1);}
+    70%{box-shadow:0 0 0 15px rgba(16, 185, 129, 0);}
+    100%{box-shadow:0 0 0 0 rgba(16, 185, 129, 0);}
+}
+/* Custom button style for a modern look */
+.app-button {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    transition: transform 0.15s, box-shadow 0.15s, background-color 0.15s;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.app-button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 10px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+}
+.app-button:active:not(:disabled) {
+    transform: translateY(0);
+}
+.app-button:disabled {
+    cursor: not-allowed;
+    filter: brightness(0.7);
+}
+</style>
+</head>
+
+<body class="min-h-screen flex items-center justify-center text-white">
+
+<div id="custom-alert-banner" class="fixed top-0 left-1/2 transform -translate-x-1/2 mt-4 p-3 rounded-lg shadow-xl text-center text-white font-bold transition-opacity duration-1000 opacity-0 z-50 pointer-events-none" style="min-width: 300px;">
+</div>
+<div class="bg-[var(--card-bg)] p-6 rounded-xl w-full max-w-md shadow-2xl border border-sky-700/50">
+    
+    <h1 class="text-2xl font-bold mb-4 text-emerald-300">⚡ Lightning Alert Monitoring</h1>
+
+    <div class="mb-4 flex justify-between items-center bg-gray-700/40 p-3 rounded-lg border border-sky-500/30">
+        <span id="status-message" class="text-lg font-semibold"></span>
+        <div id="status-indicator" class="status-dot bg-gray-500"></div>
+    </div>
+    
+    <div class="space-y-1 mb-4">
+        <p class="text-sm bg-gray-700/40 p-2 rounded border border-gray-600/50">
+            Local Time:
+            <span id="current-time-display" class="text-emerald-300 font-medium">--:--:--</span>
+        </p>
+        <p class="text-sm bg-gray-700/40 p-2 rounded border border-gray-600/50">
+            Current Location:
+            <span id="current-location" class="text-emerald-300 font-medium">Our Tampines Hub</span>
+        </p>
+    </div>
+    
+    <p class="text-sm mb-4 bg-gray-700/40 p-2 rounded border border-gray-600/50">Notification Status:
+        <span id="current-permission" class="text-yellow-400 font-medium">Unknown</span>
+    </p>
+
+    <div class="space-y-3">
+        <button id="request-permission-btn" class="w-full bg-sky-700/80 p-3 rounded-lg font-semibold app-button hover:bg-sky-600 transition">
+            1. Request Notification Permission
+        </button>
+
+        <button id="start-monitor-btn" disabled class="w-full bg-teal-700/80 p-3 rounded-lg font-semibold app-button hover:bg-teal-600 transition">
+            2. Start Monitor
+        </button>
+        
+        <div class="flex space-x-3">
+            <button id="simulate-lightning-btn" disabled class="w-1/2 bg-rose-800/80 p-3 rounded-lg font-semibold app-button hover:bg-rose-700 transition">
+                3. Simulate Lightning (Siren)
+            </button>
+            <button id="simulate-all-clear-btn" disabled class="w-1/2 bg-emerald-800/80 p-3 rounded-lg font-semibold app-button hover:bg-emerald-700 transition">
+                4. Simulate All Clear (Tone)
+            </button>
+        </div>
+        <button id="stop-monitor-btn" disabled class="w-full bg-rose-700/80 p-3 rounded-lg font-semibold app-button hover:bg-rose-600 transition disabled:opacity-50 disabled:cursor-not-allowed">
+            Stop Monitor
+        </button>
+    </div>
+
+    <div id="quote-of-the-day" class="mt-4 p-3 rounded-lg bg-purple-900/40 text-sm italic text-gray-300 border border-purple-700/50">
+        <p class="font-bold text-purple-300 mb-1">Quote of the Day:</p>
+        <p id="daily-quote-text">Loading inspiration...</p>
+    </div>
+</div>
+
+<script>
+const CHECK_INTERVAL_MS = 30000; // 30s
+let monitorInterval = null;
+let isAlertActive = false; 
+
+// DOM Elements
+const statusMessage = document.getElementById("status-message");
+const statusIndicator = document.getElementById("status-indicator");
+const startBtn = document.getElementById("start-monitor-btn");
+const stopBtn = document.getElementById("stop-monitor-btn");
+const simulateLightningBtn = document.getElementById("simulate-lightning-btn");
+const simulateAllClearBtn = document.getElementById("simulate-all-clear-btn");
+const requestBtn = document.getElementById("request-permission-btn");
+const timeSpan = document.getElementById("current-time-display");
+const permissionSpan = document.getElementById("current-permission");
+const dailyQuoteText = document.getElementById("daily-quote-text");
+
+// =========================================================
+// DAILY QUOTE LOGIC
+const INSPIRATIONAL_QUOTES = [
+    "The only way to do great work is to love what you do. – Steve Jobs",
+    "Believe you can and you're halfway there. – Theodore Roosevelt",
+    "The future belongs to those who believe in the beauty of their dreams. – Eleanor Roosevelt",
+    "Strive not to be a success, but rather to be of value. – Albert Einstein",
+    "The best time to plant a tree was 20 years ago. The second best time is now. – Chinese Proverb",
+    "The difference between a successful person and others is not a lack of strength, not a lack of knowledge, but rather a lack of will. – Vince Lombardi",
+    "Act as if what you do makes a difference. It does. – William James",
+    "The mind is everything. What you think you become. – Buddha",
+    "If you want to lift yourself up, lift up someone else. – Booker T. Washington",
+    "Our greatest weakness lies in giving up. The most certain way to succeed is always to try just one more time. – Thomas A. Edison"
+];
+
+function getDailyQuote() {
+    // Check for localStorage support
+    if (typeof(Storage) === "undefined") {
+        dailyQuoteText.textContent = "Error: Local storage not supported for daily quote.";
+        return;
+    }
+
+    const lastDateKey = 'lastQuoteDate';
+    const quoteKey = 'currentDailyQuote';
+    
+    // Get today's date string (e.g., "2025-12-03")
+    const today = new Date().toISOString().split('T')[0];
+    
+    const lastDate = localStorage.getItem(lastDateKey);
+    let quote = localStorage.getItem(quoteKey);
+
+    if (lastDate === today && quote) {
+        // It's the same day, use the stored quote
+        dailyQuoteText.textContent = quote;
+        console.log("Daily quote loaded from storage.");
+    } else {
+        // It's a new day or no quote stored, pick a new one
+        const randomIndex = Math.floor(Math.random() * INSPIRATIONAL_QUOTES.length);
+        const newQuote = INSPIRATIONAL_QUOTES[randomIndex];
+        
+        // Store the new quote and today's date
+        localStorage.setItem(quoteKey, newQuote);
+        localStorage.setItem(lastDateKey, today);
+        
+        dailyQuoteText.textContent = newQuote;
+        console.log("New daily quote set and stored.");
+    }
+}
+// END DAILY QUOTE LOGIC
+// =========================================================
+
+
+// =========================================================
+// Custom Banner Alert Function
+// Default colors updated to muted teal/emerald
+function showCustomBanner(message, bgColor = "#047857", borderColor = "#064e3b") {
+    const banner = document.getElementById("custom-alert-banner");
+    banner.innerHTML = message; 
+    
+    // Set dynamic styles
+    banner.style.backgroundColor = bgColor;
+    banner.style.borderColor = borderColor;
+
+    // Show the banner
+    banner.classList.remove("opacity-0");
+    banner.classList.add("opacity-100");
+
+    // Hide the banner after 4 seconds (4000ms)
+    setTimeout(() => {
+        banner.classList.remove("opacity-100");
+        banner.classList.add("opacity-0");
+    }, 4000); 
+}
+
+// =========================================================
+// TIME DISPLAY & STATUS UI
+function updateTime() {
+    const now = new Date();
+    timeSpan.textContent = now.toLocaleTimeString('en-US', {hour12:false});
+}
+updateTime();
+setInterval(updateTime, 1000);
+
+function updateStatus(text, color, pulse=false, symbol="") {
+    statusMessage.innerHTML = `<span class="mr-2 text-xl leading-none">${symbol}</span>${text}`;
+    statusIndicator.className = "status-dot";
+    statusIndicator.classList.add(color);
+    if(color.includes("red") && pulse) statusIndicator.classList.add("pulse-red");
+    if(color.includes("green") && pulse) statusIndicator.classList.add("pulse-green");
+}
+
+/* =========================================================
+    AUDIO ALERT FUNCTIONS (Persistent Nodes)
+    ========================================================= */
+
+let audioContext = null;
+let ringOscillator = null;
+let ringGain = null;
+let clearOscillator = null;
+let clearGain = null;
+
+
+function resumeAudioContext() {
+    if (audioContext && audioContext.state === 'suspended') {
+        audioContext.resume()
+            .then(() => console.log("AudioContext resumed successfully."))
+            .catch(e => console.error('Audio Resume Failed:', e));
+    }
+}
+
+function initAudioOnce() {
+    if (audioContext) return;
+
+    // Use webkitAudioContext for better compatibility on older iOS/Safari
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    
+    // 1. Siren Nodes Setup
+    ringOscillator = audioContext.createOscillator();
+    ringOscillator.frequency.value = 440;
+    ringOscillator.type = "sine";
+    ringGain = audioContext.createGain();
+    ringGain.gain.value = 0; 
+    ringOscillator.connect(ringGain);
+    ringGain.connect(audioContext.destination);
+    ringOscillator.start(0); 
+
+    // 2. All Clear Nodes Setup
+    clearOscillator = audioContext.createOscillator();
+    clearOscillator.frequency.value = 600; 
+    clearOscillator.type = 'sawtooth'; 
+    clearGain = audioContext.createGain();
+    clearGain.gain.value = 0;
+    clearOscillator.connect(clearGain);
+    clearGain.connect(audioContext.destination);
+    clearOscillator.start(0); 
+}
+
+function stopSound() {
+    const now = audioContext.currentTime;
+    
+    if (ringGain) {
+        ringGain.gain.cancelScheduledValues(now);
+        ringGain.gain.setValueAtTime(0, now);
+    }
+    
+    if (clearGain) {
+        clearGain.gain.cancelScheduledValues(now);
+        clearGain.gain.setValueAtTime(0, now);
+    }
+}
+
+function playPhoneRing(durationMs = 3000) { 
+    initAudioOnce(); 
+    resumeAudioContext(); 
+    
+    if (!ringGain || audioContext.state !== 'running') return;
+
+    const now = audioContext.currentTime;
+    
+    if (clearGain) {
+        clearGain.gain.cancelScheduledValues(now);
+        clearGain.gain.setValueAtTime(0, now);
+    }
+
+    ringGain.gain.cancelScheduledValues(now);
+    ringGain.gain.setValueAtTime(0, now); 
+    
+    let t = now;
+    const end = t + durationMs / 1000;
+    const ringInterval = 0.4; 
+
+    while (t < end) {
+        ringGain.gain.setValueAtTime(0.5, t);
+        t += ringInterval / 2;
+        
+        if (t < end) {
+            ringGain.gain.setValueAtTime(0, t);
+            t += ringInterval / 2;
+        }
+    }
+    
+    ringGain.gain.setValueAtTime(0, end);
+}
+
+function playAllClearTone(durationSec = 3) {
+    initAudioOnce();
+    resumeAudioContext(); 
+    
+    if (!clearGain || audioContext.state !== 'running') return;
+    
+    const now = audioContext.currentTime;
+    
+    if (ringGain) {
+        ringGain.gain.cancelScheduledValues(now);
+        ringGain.gain.setValueAtTime(0, now);
+    }
+    
+    clearGain.gain.cancelScheduledValues(now);
+    clearGain.gain.setValueAtTime(0, now);
+    
+    const end = now + durationSec;
+    
+    clearGain.gain.linearRampToValueAtTime(0.4, now + 0.1); 
+    clearGain.gain.linearRampToValueAtTime(0.0001, end); 
+}
+
+
+// =========================================================
+// ALERT CONTROL FUNCTIONS
+
+function triggerAlert(forecast="Thunderstorm detected") {
+    isAlertActive = true; 
+    playPhoneRing(); 
+    updateStatus("LIGHTNING ALERT", "bg-red-600", true, "🚨⛈️"); // Uses bg-red-600, which pulses with muted red
+
+    // Custom message for Lightning Alert (Muted Rose/Burgundy)
+    showCustomBanner("🚨 LIGHTNING ALERT NOW. TURN ON BLINKER & POST MESSAGE TO SPORTS GROUP", "#a12c4b", "#881337"); 
+
+    if(Notification.permission === "granted") {
+        new Notification("Lightning Alert", {
+            body: forecast,
+            // Muted red icon color
+            icon: "https://placehold.co/64x64/a12c4b/ffffff?text=⚡️"
+        });
+    }
+}
+
+function clearAlert() {
+    stopSound(); 
+    isAlertActive = false; 
+
+    playAllClearTone(); 
+
+    // Green box message for All Clear (Muted Emerald/Teal)
+    showCustomBanner("All Clear! Situation safe. Monitoring continues. 🎉", "#047857", "#064e3b");
+
+    updateStatus("ALL CLEAR: Situation Safe", "bg-yellow-500", false, "🔔✨");
+
+    if(Notification.permission === "granted") {
+        new Notification("Lightning Alert Cleared", {
+            body: "The area is now safe. Monitoring is continuing.",
+            // Muted yellow icon color
+            icon: "https://placehold.co/64x64/f59e0b/000000?text=🔔"
+        });
+    }
+}
+
+
+// =========================================================
+// FETCH WEATHER FORECAST
+const API_URL = "https://api.data.gov.sg/v1/environment/2-hour-weather-forecast";
+const TARGET_AREA = "Tampines";
+
+async function checkForecast() {
+    try {
+        const res = await fetch(API_URL);
+        const data = await res.json();
+        const forecastItem = data.items[0];
+        const areaForecast = forecastItem.forecasts.find(f => f.area.toUpperCase() === TARGET_AREA.toUpperCase());
+        const forecastText = areaForecast ? areaForecast.forecast : "Data unavailable";
+
+        const alertKeywords = ["Thunder", "TShowers"];
+        const isAlert = alertKeywords.some(k => forecastText.toLowerCase().includes(k.toLowerCase()));
+
+        if(isAlert){
+            if (!isAlertActive) {
+                triggerAlert(`Forecast: ${forecastText}`);
+            } else {
+                updateStatus("LIGHTNING ALERT", "bg-red-600", true, "🚨⛈️");
+            }
+        } else {
+            if (isAlertActive) {
+                clearAlert();
+            } else {
+                updateStatus(`Safe: ${forecastText}`, "bg-green-500", true, "✅☀️");
+            }
+        }
+    } catch(err) {
+        updateStatus("Error fetching forecast", "bg-yellow-500", false, "⚠️");
+        console.error(err);
+    }
+}
+
+// =========================================================
+// MONITOR CONTROL 
+function startMonitor() {
+    initAudioOnce(); 
+    resumeAudioContext(); 
+    updateStatus("Monitoring...", "bg-blue-500", false, "🔍");
+    checkForecast(); 
+    if (monitorInterval) clearInterval(monitorInterval);
+    monitorInterval = setInterval(checkForecast, CHECK_INTERVAL_MS);
+    startBtn.disabled = true;
+    stopBtn.disabled = false;
+    // Disable both simulation buttons while monitoring
+    simulateLightningBtn.disabled = true;
+    simulateAllClearBtn.disabled = true;
+}
+
+function stopMonitor() {
+    clearInterval(monitorInterval);
+    monitorInterval = null;
+    stopSound();
+    isAlertActive = false;
+    updateStatus("Stopped", "bg-gray-500", false, "🛑");
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+    // Enable both simulation buttons when monitoring stops
+    simulateLightningBtn.disabled = false;
+    simulateAllClearBtn.disabled = false;
+}
+
+// =========================================================
+// PERMISSION FLOW 
+function requestPermission() {
+    if(!("Notification" in window)){
+        console.error("This browser does not support notifications.");
+        permissionSpan.textContent = "Unsupported";
+        permissionSpan.className = "text-red-400 font-medium";
+        requestBtn.disabled = true;
+        requestBtn.textContent = "Notifications Unsupported";
+        return;
+    }
+    
+    requestBtn.disabled = true; 
+    requestBtn.textContent = "Requesting..."; 
+
+    Notification.requestPermission().then(permission => {
+        permissionSpan.textContent = permission.charAt(0).toUpperCase() + permission.slice(1);
+        if(permission === "granted"){
+            permissionSpan.className = "text-green-400 font-medium";
+            startBtn.disabled = false;
+            // Enable simulation buttons
+            simulateLightningBtn.disabled = false;
+            simulateAllClearBtn.disabled = false;
+            requestBtn.textContent = "Permission Granted"; 
+        } else if(permission === "denied"){
+            permissionSpan.className = "text-red-400 font-medium";
+            requestBtn.textContent = "Permission Denied"; 
+        } else {
+            permissionSpan.className = "text-yellow-400 font-medium";
+            requestBtn.textContent = "Prompt Ignored/Default"; 
+        }
+    });
+}
+
+// =========================================================
+// EVENT LISTENERS & INITIALIZATION
+requestBtn.addEventListener("click", requestPermission);
+startBtn.addEventListener("click", startMonitor);
+stopBtn.addEventListener("click", stopMonitor);
+
+// NEW DEDICATED SIMULATION LISTENERS
+simulateLightningBtn.addEventListener("click", () => {
+    initAudioOnce(); 
+    resumeAudioContext();
+    triggerAlert("Simulated Lightning Alert"); // Start the alert state
+});
+
+simulateAllClearBtn.addEventListener("click", () => {
+    initAudioOnce(); 
+    resumeAudioContext();
+    clearAlert(); // End the alert state
+});
+
+
+window.onload = () => {
+    // Initial check for notification status
+    if ("Notification" in window) {
+        const permission = Notification.permission;
+        
+        permissionSpan.textContent = permission.charAt(0).toUpperCase() + permission.slice(1);
+
+        if (permission === "granted") {
+            permissionSpan.className = "text-green-400 font-medium";
+            startBtn.disabled = false;
+            // Enable simulation buttons
+            simulateLightningBtn.disabled = false;
+            simulateAllClearBtn.disabled = false;
+            requestBtn.disabled = true;
+            requestBtn.textContent = "Permission Granted";
+        } else if (permission === "denied") {
+            permissionSpan.className = "text-red-400 font-medium";
+            requestBtn.disabled = true;
+            requestBtn.textContent = "Permission Denied";
+        } else {
+            permissionSpan.className = "text-yellow-400 font-medium";
+            startBtn.disabled = true;
+            // Disable simulation buttons
+            simulateLightningBtn.disabled = true;
+            simulateAllClearBtn.disabled = true;
+        }
+    } else {
+        permissionSpan.textContent = "Unsupported";
+        permissionSpan.className = "text-red-400 font-medium";
+        requestBtn.disabled = true;
+        requestBtn.textContent = "Notifications Unsupported";
+    }
+
+    updateStatus("Awaiting Start", "bg-gray-500", false, "⚪");
+
+    initAudioOnce();
+    
+    // Get and display the daily quote
+    getDailyQuote(); 
+};
+</script>
+</body>
+</html>
