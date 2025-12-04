@@ -1,540 +1,151 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Lightning Alert Monitoring</title>
+
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 
 <style>
-/* --- DARK PASTEL COLOR PALETTE --- */
 :root {
-    --bg-main: #1C2434; /* Soft dark indigo/blue-grey background */
-    --card-bg: #2C3545; /* Slightly lighter card background */
-    --accent-blue: #70A0F0; /* Soft, light blue for headers/time */
-    --pastel-green: #90EE90; /* Soft mint green (safe) */
-    --pastel-red: #F08080; /* Light coral/salmon (alert) */
+  --bg-main: #1C2434;
+  --card-bg: #2C3545;
+  --accent-blue: #70A0F0;
+  --pastel-green: #90EE90;
+  --pastel-red: #F08080;
 }
+
 body {
-    font-family: 'Inter', sans-serif;
-    /* Use main color with a slight shadow for depth */
-    background-color: var(--bg-main);
-    min-height: 100vh;
+  font-family: 'Inter', sans-serif;
 }
+
 .status-dot {
-    width: 1.25rem;
-    height: 1.25rem;
-    border-radius:50%;
-    transition: all 0.3s;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
 }
-/* Pulse colors updated to use the new pastel shades */
+
 .pulse-red {
-    animation: pulse-red 1.5s infinite;
+  animation: pulse-red 1.5s infinite;
 }
+
 @keyframes pulse-red {
-    0%{box-shadow:0 0 0 0 rgba(240, 128, 128, 1);}
-    70%{box-shadow:0 0 0 15px rgba(240, 128, 128, 0);}
-    100%{box-shadow:0 0 0 0 rgba(240, 128, 128, 0);}
+  0% { box-shadow: 0 0 0 0 rgba(240,128,128,1); }
+  70% { box-shadow: 0 0 0 15px rgba(240,128,128,0); }
+  100% { box-shadow: 0 0 0 0 rgba(240,128,128,0); }
 }
+
 .pulse-green {
-    animation: pulse-green 1.5s infinite;
+  animation: pulse-green 1.5s infinite;
 }
+
 @keyframes pulse-green {
-    0%{box-shadow:0 0 0 0 rgba(144, 238, 144, 1);}
-    70%{box-shadow:0 0 0 15px rgba(144, 238, 144, 0);}
-    100%{box-shadow:0 0 0 0 rgba(144, 238, 144, 0);}
+  0% { box-shadow: 0 0 0 0 rgba(144,238,144,1); }
+  70% { box-shadow: 0 0 0 15px rgba(144,238,144,0); }
+  100% { box-shadow: 0 0 0 0 rgba(144,238,144,0); }
 }
-/* Custom button style for a modern look */
+
 .app-button {
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-    transition: transform 0.15s, box-shadow 0.15s, background-color 0.15s;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,.25);
+  transition: transform .15s, box-shadow .15s;
+  border: 1px solid rgba(255,255,255,.1);
 }
+
 .app-button:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 10px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 10px -3px rgba(0,0,0,.45);
 }
-.app-button:active:not(:disabled) {
-    transform: translateY(0);
-}
+
 .app-button:disabled {
-    cursor: not-allowed;
-    filter: brightness(0.7);
+  opacity: .6;
+  cursor: not-allowed;
 }
 </style>
 </head>
 
-<body class="min-h-screen flex items-center justify-center text-white">
+<body class="min-h-screen flex items-center justify-center text-white bg-[var(--bg-main)] p-4">
 
-<div class="bg-[var(--card-bg)] p-6 rounded-xl w-full max-w-md shadow-2xl border border-blue-800/50">
-        <h1 class="text-2xl font-bold mb-4 text-[var(--accent-blue)]">⚡ Lightning Alert Monitoring</h1>
+<div class="bg-[var(--card-bg)] p-5 rounded-xl w-full max-w-md shadow-2xl border border-blue-800/50">
 
-        <div class="mb-4 flex justify-between items-center bg-gray-900/40 p-3 rounded-lg border border-blue-500/30">
-        <span id="status-message" class="text-lg font-semibold"></span>
-        <div id="status-indicator" class="status-dot bg-gray-500"></div>
-    </div>
-    
-        <div class="space-y-1 mb-4">
-        <p class="text-sm bg-gray-900/40 p-2 rounded border border-gray-700/50">
-            Local Time:
-            <span id="current-time-display" class="text-[var(--accent-blue)] font-medium">--:--:--</span>
-        </p>
-        <p class="text-sm bg-gray-900/40 p-2 rounded border border-gray-700/50">
-            Current Location:
-            <span id="current-location" class="text-[var(--accent-blue)] font-medium">Our Tampines Hub</span>
-        </p>
-    </div>
-    
-    <p class="text-sm mb-4 bg-gray-900/40 p-2 rounded border border-gray-700/50">Notification Status:
-        <span id="current-permission" class="text-yellow-400 font-medium">Unknown</span>
-    </p>
+  <h1 class="text-2xl font-bold mb-4 text-[var(--accent-blue)]">
+    ⚡ Lightning Alert Monitoring
+  </h1>
 
-        <div class="space-y-1">
-                <button id="request-permission-btn" class="w-full bg-blue-700/80 p-3 rounded-lg font-semibold app-button hover:bg-blue-700 transition">
-            1. Request Notification Permission
-        </button>
+  <div class="mb-4 flex justify-between items-center bg-gray-900/40 p-3 rounded-lg border border-blue-500/30">
+    <span id="status-message" class="text-lg font-semibold">Awaiting Start</span>
+    <div id="status-indicator" class="status-dot bg-gray-500"></div>
+  </div>
 
-        <button id="start-monitor-btn" disabled class="w-full bg-green-700/80 p-3 rounded-lg font-semibold app-button hover:bg-green-700 transition">
-            2. Start Monitor
-        </button>
+  <div class="space-y-2 mb-4 text-sm">
+    <p class="bg-gray-900/40 p-2 rounded border border-gray-700/50">
+      Local Time:
+      <span id="current-time-display" class="text-[var(--accent-blue)] font-medium">--:--:--</span>
+    </p>
+    <p class="bg-gray-900/40 p-2 rounded border border-gray-700/50">
+      Location:
+      <span class="text-[var(--accent-blue)] font-medium">Our Tampines Hub</span>
+    </p>
+  </div>
 
-                <button id="simulate-alert-btn" disabled class="w-full bg-red-600/80 p-3 rounded-lg font-semibold app-button hover:bg-red-600 transition">
-            3. Simulate Lightning Alert
-        </button>
+  <p class="text-sm mb-4 bg-gray-900/40 p-2 rounded border border-gray-700/50">
+    Notification Status:
+    <span id="current-permission" class="text-yellow-400 font-medium">Unknown</span>
+  </p>
 
-        <button id="simulate-clear-btn" disabled class="w-full bg-amber-500/80 p-3 rounded-lg font-semibold app-button hover:bg-amber-500 transition">
-            Simulate All Clear
-        </button>
+  <!-- ✅ CLEAN BUTTON STACK -->
+  <div class="flex flex-col gap-2">
+    <button id="request-permission-btn"
+      class="w-full bg-blue-700/80 p-2 rounded-lg font-semibold app-button">
+      1. Request Notification Permission
+    </button>
 
-        <button id="stop-monitor-btn" disabled class="w-full bg-red-700/80 p-3 rounded-lg font-semibold app-button hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
-            Stop Monitor
-        </button>
-    </div>
+    <button id="start-monitor-btn" disabled
+      class="w-full bg-green-700/80 p-2 rounded-lg font-semibold app-button">
+      2. Start Monitor
+    </button>
+
+    <button id="simulate-alert-btn" disabled
+      class="w-full bg-red-600/80 p-2 rounded-lg font-semibold app-button">
+      3. Simulate Lightning Alert
+    </button>
+
+    <button id="simulate-clear-btn" disabled
+      class="w-full bg-amber-500/80 p-2 rounded-lg font-semibold app-button">
+      Simulate All Clear
+    </button>
+
+    <button id="stop-monitor-btn" disabled
+      class="w-full bg-red-700/80 p-2 rounded-lg font-semibold app-button">
+      Stop Monitor
+    </button>
+  </div>
+
 </div>
 
 <script>
-const CHECK_INTERVAL_MS = 30000; // 30s
-let monitorInterval = null;
-let isAlertActive = false; // Track if a lightning alert is currently active
+/* --- TIME --- */
+const timeSpan = document.getElementById("current-time-display");
+setInterval(() => {
+  timeSpan.textContent = new Date().toLocaleTimeString("en-GB");
+}, 1000);
 
-// DOM Elements
+/* --- STATUS UI --- */
 const statusMessage = document.getElementById("status-message");
 const statusIndicator = document.getElementById("status-indicator");
-const startBtn = document.getElementById("start-monitor-btn");
-const stopBtn = document.getElementById("stop-monitor-btn");
-const simulateBtn = document.getElementById("simulate-alert-btn");
-const simulateClearBtn = document.getElementById("simulate-clear-btn");
-const requestBtn = document.getElementById("request-permission-btn");
-const timeSpan = document.getElementById("current-time-display");
-const permissionSpan = document.getElementById("current-permission");
 
-// Define custom color variables for JavaScript interaction
-const PASTEL_RED = "var(--pastel-red)"; // #F08080
-const PASTEL_GREEN = "var(--pastel-green)"; // #90EE90
-
-
-// =========================================================
-// TIME DISPLAY
-function updateTime() {
-    const now = new Date();
-    timeSpan.textContent = now.toLocaleTimeString('en-US', {hour12:false});
-}
-// Start immediate and set interval 
-updateTime();
-setInterval(updateTime, 1000);
-
-// =========================================================
-// STATUS UI
-function updateStatus(text, color, pulse=false, symbol="") {
-    // Use innerHTML to combine symbol and text. text-xl makes the emoji stand out slightly.
-    statusMessage.innerHTML = `<span class="mr-2 text-xl leading-none">${symbol}</span>${text}`;
-    statusIndicator.className = "status-dot";
-    
-    // Apply custom color to indicator if passed
-    if (color.startsWith("var")) {
-        statusIndicator.style.backgroundColor = color;
-    } else {
-        // Fallback for Tailwind classes or default colours (e.g., gray-500)
-        statusIndicator.classList.add(color);
-    }
-    
-    if(color === PASTEL_RED && pulse) statusIndicator.classList.add("pulse-red");
-    if(color === PASTEL_GREEN && pulse) statusIndicator.classList.add("pulse-green");
-    
-    // If the color isn't a custom variable, remove any old background-color style
-    if (!color.startsWith("var")) {
-        statusIndicator.style.backgroundColor = '';
-    }
+function updateStatus(text, color, pulse=false) {
+  statusMessage.textContent = text;
+  statusIndicator.className = "status-dot";
+  statusIndicator.style.backgroundColor = color;
+  if (pulse && color === "#F08080") statusIndicator.classList.add("pulse-red");
+  if (pulse && color === "#90EE90") statusIndicator.classList.add("pulse-green");
 }
 
-/* =========================================================
-    ✅ AUDIO ALERT LOGIC
-    ========================================================= */
-
-let audioContext = null;
-let ringOscillator = null;
-let ringGain = null;
-let clearOscillator = null;
-let clearGain = null;
-
-
-/**
- * Resumes the AudioContext if it is suspended, ensuring audio plays after a user gesture.
- */
-function resumeAudioContext() {
-    if (audioContext && audioContext.state === 'suspended') {
-        audioContext.resume()
-            .then(() => console.log("AudioContext resumed successfully."))
-            .catch(e => console.error('Audio Resume Failed:', e));
-    }
-}
-
-function initAudioOnce() {
-    if (audioContext) return;
-
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    
-    // Create and connect components once for the ALERT RING
-    ringOscillator = audioContext.createOscillator();
-    ringOscillator.frequency.value = 440;
-    ringOscillator.type = "sine";
-
-    ringGain = audioContext.createGain();
-    ringGain.gain.value = 0; // Start silenced
-
-    ringOscillator.connect(ringGain);
-    ringGain.connect(audioContext.destination);
-    
-    // Start the oscillator immediately, control volume with gain
-    ringOscillator.start(0); 
-}
-
-// Stops the sound immediately
-function stopSound() {
-    if (ringGain && audioContext) {
-        // Fade out gain immediately to stop the sound instantly
-        const now = audioContext.currentTime;
-        ringGain.gain.cancelScheduledValues(now);
-        ringGain.gain.setValueAtTime(0, now);
-        console.log("Audio alert stopped.");
-    }
-}
-
-/**
- * Plays a brief, high-pitched tone for "All Clear".
- */
-function playAllClearTone() {
-    initAudioOnce(); // Ensure context is ready
-    resumeAudioContext();
-
-    if (!audioContext || audioContext.state !== 'running') {
-        console.warn("Audio Context not running. Cannot play clear tone.");
-        return;
-    }
-
-    const now = audioContext.currentTime;
-
-    // 1. Create temporary oscillator/gain specific to the chime
-    clearOscillator = audioContext.createOscillator();
-    clearGain = audioContext.createGain();
-
-    // Set a high frequency (like 880 Hz - two octaves above 440 Hz) for a clear, positive sound
-    clearOscillator.frequency.value = 880; 
-    clearOscillator.type = "square"; // Use square wave for a distinct, digital chime sound
-
-    clearOscillator.connect(clearGain);
-    clearGain.connect(audioContext.destination);
-
-    // 2. Schedule a short, controlled ramp up and ramp down for the chime effect
-    const duration = 0.3; // 300 ms duration
-    
-    // Start at volume 0, ramp to 0.4 volume quickly, then fade out
-    clearGain.gain.setValueAtTime(0, now);
-    clearGain.gain.linearRampToValueAtTime(0.4, now + 0.05); // Quick attack
-    clearGain.gain.linearRampToValueAtTime(0, now + duration); // Slower release
-
-    // 3. Start and stop the oscillator
-    clearOscillator.start(now);
-    clearOscillator.stop(now + duration);
-    
-    // Clean up nodes after they have stopped
-    clearOscillator.onended = () => {
-        if (clearOscillator) {
-            clearOscillator.disconnect();
-            clearGain.disconnect();
-            clearOscillator = null;
-            clearGain = null;
-        }
-    };
-    
-    console.log("All Clear tone played.");
-}
-
-
-function playPhoneRing(durationMs = 8000) { 
-    initAudioOnce(); // Ensure context is ready
-    
-    resumeAudioContext(); 
-    
-    if (!ringGain) return;
-
-    if (audioContext.state !== 'running') {
-        console.warn("Audio Context is still suspended. Sound may be blocked by the browser.");
-        return;
-    }
-
-    const now = audioContext.currentTime;
-    
-    // 1. Clear any pending gain changes and immediately set gain to 0 for a clean start
-    ringGain.gain.cancelScheduledValues(now);
-    ringGain.gain.setValueAtTime(0, now); 
-    
-    let t = now;
-    const end = t + durationMs / 1000;
-    const ringInterval = 0.4; // 0.2s ON, 0.2s OFF
-
-    // 2. Schedule the ring pattern
-    while (t < end) {
-        // Ring ON (Set to 0.5 volume)
-        ringGain.gain.setValueAtTime(0.5, t);
-        t += ringInterval / 2;
-        
-        // Ring OFF (Set to 0 volume)
-        if (t < end) {
-            ringGain.gain.setValueAtTime(0, t);
-            t += ringInterval / 2;
-        }
-    }
-    
-    // 3. Ensure sound stops exactly at the end time 
-    ringGain.gain.setValueAtTime(0, end);
-}
-
-// =========================================================
-// ALERT CONTROL FUNCTIONS
-
-function triggerAlert(forecast="Thunderstorm detected") {
-    console.log("Attempting to play audio alert...");
-    isAlertActive = true; // Set alert to active
-    
-    // 1. Play Sound 
-    playPhoneRing(); 
-    
-    // 2. Update UI - Use soft red pastel
-    updateStatus("LIGHTNING ALERT", PASTEL_RED, true, "🚨⛈️");
-
-    // 3. System Notification
-    if(Notification.permission === "granted") {
-        new Notification("Lightning Alert", {
-            body: forecast,
-            icon: "https://placehold.co/64x64/F08080/000000?text=⚡️" /* Use pastel red in icon */
-        });
-    }
-}
-
-function clearAlert() {
-    stopSound(); // Stop the ringing sound (Lightning Alert)
-    isAlertActive = false; // Set alert to inactive
-
-    // Play the All Clear Tone
-    playAllClearTone(); 
-
-    // Update UI - Use soft yellow (amber-500)
-    updateStatus("ALL CLEAR: Situation Safe", "bg-amber-500", false, "🔔✨");
-
-    // System Notification
-    if(Notification.permission === "granted") {
-        new Notification("Lightning Alert Cleared", {
-            body: "The area is now safe. Monitoring is continuing.",
-            icon: "https://placehold.co/64x64/FFBF00/000000?text=🔔" /* Soft yellow in icon */
-        });
-    }
-}
-
-
-// =========================================================
-// FETCH WEATHER FORECAST
-const API_URL = "https://api.data.gov.sg/v1/environment/2-hour-weather-forecast";
-const TARGET_AREA = "Tampines";
-
-async function checkForecast() {
-    try {
-        const res = await fetch(API_URL);
-        const data = await res.json();
-        const forecastItem = data.items[0];
-        const areaForecast = forecastItem.forecasts.find(f => f.area.toUpperCase() === TARGET_AREA.toUpperCase());
-        const forecastText = areaForecast ? areaForecast.forecast : "Data unavailable";
-
-        const alertKeywords = ["Thunder", "TShowers"];
-        const isAlert = alertKeywords.some(k => forecastText.toLowerCase().includes(k.toLowerCase()));
-
-        if(isAlert){
-            if (!isAlertActive) {
-                // NEW ALERT: Trigger only if not already active
-                triggerAlert(`Forecast: ${forecastText}`);
-            } else {
-                // ALERT CONTINUES - Use soft red pastel
-                updateStatus("LIGHTNING ALERT", PASTEL_RED, true, "🚨⛈️");
-            }
-        } else {
-            // If forecast is safe
-            if (isAlertActive) {
-                // ALERT CLEARED: Transition from active alert to safe
-                clearAlert();
-            } else {
-                // Status remains safe/monitoring - Use soft green pastel
-                updateStatus(`Safe: ${forecastText}`, PASTEL_GREEN, true, "✅☀️");
-            }
-        }
-    } catch(err) {
-        // Updated status with error symbol
-        updateStatus("Error fetching forecast", "bg-amber-500", false, "⚠️");
-        console.error(err);
-    }
-}
-
-// =========================================================
-// MONITOR CONTROL
-function startMonitor() {
-    initAudioOnce(); // Initialize audio context
-    resumeAudioContext(); // Ensure audio context is running
-    
-    // Updated status with monitoring symbol - Use soft blue accent
-    updateStatus("Monitoring...", "var(--accent-blue)", false, "🔍");
-    checkForecast(); // Immediate check
-    
-    if (monitorInterval) clearInterval(monitorInterval);
-    monitorInterval = setInterval(checkForecast, CHECK_INTERVAL_MS);
-    
-    startBtn.disabled = true;
-    stopBtn.disabled = false;
-    simulateBtn.disabled = true;
-    simulateClearBtn.disabled = true; // Disable clear sim during active monitoring
-}
-
-function stopMonitor() {
-    clearInterval(monitorInterval);
-    monitorInterval = null;
-    
-    // Stop sound and reset alert state if monitoring is manually stopped
-    stopSound();
-    isAlertActive = false;
-    
-    // Updated status with stopped symbol
-    updateStatus("Stopped", "bg-gray-500", false, "🛑");
-    startBtn.disabled = false;
-    stopBtn.disabled = true;
-    simulateBtn.disabled = false;
-    simulateClearBtn.disabled = false; // Enable clear sim when stopped
-}
-
-// =========================================================
-// NOTIFICATION PERMISSION FLOW
-function requestPermission() {
-    if(!("Notification" in window)){
-        console.error("This browser does not support notifications.");
-        permissionSpan.textContent = "Unsupported";
-        permissionSpan.className = "text-red-400 font-medium";
-        requestBtn.disabled = true;
-        requestBtn.textContent = "Notifications Unsupported";
-        return;
-    }
-    Notification.requestPermission().then(permission => {
-        permissionSpan.textContent = permission.charAt(0).toUpperCase() + permission.slice(1);
-        if(permission === "granted"){
-            permissionSpan.className = "text-green-400 font-medium";
-            startBtn.disabled = false;
-            simulateBtn.disabled = false;
-            simulateClearBtn.disabled = false; // Enable clear sim button
-            requestBtn.disabled = true;
-            requestBtn.textContent = "Permission Granted";
-        } else if(permission === "denied"){
-            permissionSpan.className = "text-red-400 font-medium";
-            requestBtn.disabled = true;
-            requestBtn.textContent = "Permission Denied";
-        } else {
-            permissionSpan.className = "text-yellow-400 font-medium";
-        }
-    });
-}
-
-// =========================================================
-// EVENT LISTENERS & INITIALIZATION
-requestBtn.addEventListener("click", requestPermission);
-startBtn.addEventListener("click", startMonitor);
-stopBtn.addEventListener("click", stopMonitor);
-
-// Simulate Lightning Alert Button
-simulateBtn.addEventListener("click", () => {
-    // Only simulate a NEW alert if one is not already active
-    if (!isAlertActive) {
-        initAudioOnce(); 
-        resumeAudioContext(); 
-        triggerAlert("Simulated Lightning Alert");
-    } else {
-        console.log("Lightning alert is already active. Click 'Simulate All Clear' to transition.");
-    }
-});
-
-// Simulate All Clear Button
-simulateClearBtn.addEventListener("click", () => {
-    if (isAlertActive) {
-        clearAlert(); // Triggers the 'All Clear' sound and notification
-    } else {
-        // If not active, we still play the chime to test the sound function
-        playAllClearTone();
-        updateStatus("Simulated Clear Tone Played", "bg-amber-400", false, "🎶");
-        console.log("No active alert to clear. Playing 'All Clear' tone for testing.");
-        // Revert status after a brief moment if monitoring is stopped
-        if (!monitorInterval) {
-            setTimeout(() => updateStatus("Awaiting Start", "bg-gray-500", false, "⚪"), 1500);
-        }
-    }
-});
-
-
-window.onload = () => {
-    // Initial check for notification status
-    if ("Notification" in window) {
-        const permission = Notification.permission;
-        
-        // Update permission display
-        permissionSpan.textContent = permission.charAt(0).toUpperCase() + permission.slice(1);
-
-        if (permission === "granted") {
-            permissionSpan.className = "text-green-400 font-medium";
-            startBtn.disabled = false;
-            simulateBtn.disabled = false;
-            simulateClearBtn.disabled = false;
-            requestBtn.disabled = true;
-            requestBtn.textContent = "Permission Granted";
-        } else if (permission === "denied") {
-            permissionSpan.className = "text-red-400 font-medium";
-            requestBtn.disabled = true;
-            requestBtn.textContent = "Permission Denied";
-        } else {
-            // Default or prompt
-            permissionSpan.className = "text-yellow-400 font-medium";
-            startBtn.disabled = true;
-            simulateBtn.disabled = true;
-            simulateClearBtn.disabled = true;
-        }
-    } else {
-        permissionSpan.textContent = "Unsupported";
-        permissionSpan.className = "text-red-400 font-medium";
-        requestBtn.disabled = true;
-        requestBtn.textContent = "Notifications Unsupported";
-    }
-
-    // Set initial status using the new function
-    updateStatus("Awaiting Start", "bg-gray-500", false, "⚪");
-
-    // Initialize audio context silently
-    initAudioOnce();
-};
+/* --- INITIAL STATE --- */
+updateStatus("Awaiting Start", "#6B7280");
 </script>
 
 </body>
-
 </html>
