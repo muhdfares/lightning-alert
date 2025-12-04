@@ -58,21 +58,25 @@ body {
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
 
+<!-- Logo -->
 <div class="absolute top-5 left-1/2 transform -translate-x-1/2">
   <img src="logo.png" alt="Our Tampines Hub Logo" class="h-32 w-auto">
 </div>
 
+<!-- Card -->
 <div class="bg-[var(--card-bg)] p-5 rounded-xl w-full max-w-md shadow-2xl border border-blue-800/50 mt-40">
   <h1 class="text-2xl font-bold mb-4 text-[var(--accent-blue)] text-center">⚡ Lightning Alert Monitoring</h1>
 
+  <!-- Status -->
   <div class="mb-4 flex justify-between items-center bg-gray-900/40 p-3 rounded-lg border border-blue-500/30">
     <span id="status-message" class="text-lg font-semibold">Awaiting Start</span>
     <div id="status-indicator" class="status-dot bg-gray-500"></div>
   </div>
 
+  <!-- Time, Location, Temperature -->
   <div class="space-y-2 mb-4 text-sm">
     <p class="bg-gray-900/40 p-2 rounded border border-gray-700/50">
-      Local Time: <span id="current-time-display" class="text-[var(--accent-blue)] font-medium">--:--:--</span>
+      Local Time: <span id="current-time-display" class="text-[var(--accent-blue)] font-medium">--:--:-- | --</span>
     </p>
     <p class="bg-gray-900/40 p-2 rounded border border-gray-700/50">
       Location: <span id="current-location" class="text-[var(--accent-blue)] font-medium">Our Tampines Hub</span>
@@ -82,53 +86,105 @@ body {
     </p>
   </div>
 
+  <!-- Notification Status -->
   <p class="text-sm mb-4 bg-gray-900/40 p-2 rounded border border-gray-700/50">
     Notification Status: <span id="current-permission" class="text-yellow-400 font-medium">Unknown</span>
   </p>
 
+  <!-- Buttons -->
+  <div class="flex justify-between mb-2 gap-2">
+    <button id="simulate-alert-btn" disabled class="w-1/2 bg-red-600/80 p-2 rounded-lg font-semibold app-button">🚨 Simulate Alert</button>
+    <button id="simulate-clear-btn" disabled class="w-1/2 bg-amber-500/80 p-2 rounded-lg font-semibold app-button">🔔 All Clear</button>
+  </div>
+
   <div class="flex flex-col gap-2">
-    <button id="request-permission-btn" class="w-full bg-blue-700/80 p-2 rounded-lg font-semibold app-button">Request Notification Permission</button>
+    <button id="request-permission-btn" class="w-full bg-blue-700/80 p-2 rounded-lg font-semibold app-button">1. Request Notification Permission</button>
+    <button id="start-monitor-btn" disabled class="w-full bg-green-700/80 p-2 rounded-lg font-semibold app-button">2. Start Monitor</button>
+    <button id="stop-monitor-btn" disabled class="w-full bg-red-700/80 p-2 rounded-lg font-semibold app-button">Stop Monitor</button>
     <button id="toggle-dark-btn" class="toggle-button mt-2">Toggle Dark/Light</button>
   </div>
 </div>
 
 <script>
+const CHECK_INTERVAL_MS = 30000;
+let monitorInterval = null;
+let isAlertActive = false;
+let lastAlertTime = 0;
+
+const PASTEL_RED_HEX = "#F08080";
+const PASTEL_GREEN_HEX = "#90EE90";
+const ACCENT_BLUE_VAR = "var(--accent-blue)";
+
+const statusMessage = document.getElementById("status-message");
+const statusIndicator = document.getElementById("status-indicator");
+const startBtn = document.getElementById("start-monitor-btn");
+const stopBtn = document.getElementById("stop-monitor-btn");
+const simulateBtn = document.getElementById("simulate-alert-btn");
+const simulateClearBtn = document.getElementById("simulate-clear-btn");
+const requestBtn = document.getElementById("request-permission-btn");
 const timeSpan = document.getElementById("current-time-display");
 const permissionSpan = document.getElementById("current-permission");
-const requestBtn = document.getElementById("request-permission-btn");
 const tempSpan = document.getElementById("current-temp");
+const toggleDarkBtn = document.getElementById("toggle-dark-btn");
 
-// Update time every second
+// ===================== Time & Date =====================
 function updateTime() {
-  timeSpan.textContent = new Date().toLocaleTimeString('en-GB');
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('en-GB');
+  const dateStr = now.toLocaleDateString('en-GB', { weekday:'short', day:'2-digit', month:'short', year:'numeric' });
+  timeSpan.textContent = `${timeStr} | ${dateStr}`;
 }
 updateTime();
 setInterval(updateTime, 1000);
 
-// Fetch temperature from Data.gov.sg API
+// ===================== Temperature =====================
 async function fetchTemperature(){
   try{
     const res = await fetch("https://api.data.gov.sg/v1/environment/2-hour-weather-forecast");
     const data = await res.json();
     const forecastItem = data.items[0];
-    const tampinesForecast = forecastItem.forecasts.find(f => f.area.toUpperCase()==="TAMPINES");
+    const tampinesForecast = forecastItem.forecasts.find(f=>f.area.toUpperCase()==="TAMPINES");
     if(tampinesForecast){
-      // Using simple color coding based on forecast text
       const text = tampinesForecast.forecast.toLowerCase();
       if(text.includes("thunder")) tempSpan.style.color = "#F08080";
       else if(text.includes("cloudy")) tempSpan.style.color = "#90EE90";
       else tempSpan.style.color = "#FFD700";
-      tempSpan.textContent = forecastItem.general.temperature.low.toFixed(1) + "°C"; // approximate
+      tempSpan.textContent = forecastItem.general.temperature.low.toFixed(1) + "°C";
     }
   }catch(err){
-    tempSpan.textContent = "--°C";
+    tempSpan.textContent="--°C";
     tempSpan.style.color="#ffffff";
   }
 }
 fetchTemperature();
-setInterval(fetchTemperature, 60000); // refresh every minute
+setInterval(fetchTemperature, 60000);
 
-// Notification permission
+// ===================== Status UI =====================
+function updateStatus(text, color, pulse=false, symbol=""){
+  statusMessage.innerHTML = `<span class="mr-2 text-xl leading-none">${symbol}</span>${text}`;
+  statusIndicator.className="status-dot";
+  statusIndicator.style.backgroundColor=color;
+  statusIndicator.classList.remove("pulse-red","pulse-green");
+  if(pulse && color===PASTEL_RED_HEX) statusIndicator.classList.add("pulse-red");
+  if(pulse && color===PASTEL_GREEN_HEX) statusIndicator.classList.add("pulse-green");
+}
+
+// ===================== Monitor Control =====================
+function startMonitor(){ 
+  updateStatus("Monitoring...",ACCENT_BLUE_VAR,false,"🔍");
+  if(monitorInterval) clearInterval(monitorInterval);
+  monitorInterval=setInterval(()=>{},CHECK_INTERVAL_MS); // Placeholder
+  startBtn.disabled=true; stopBtn.disabled=false;
+  simulateBtn.disabled=true; simulateClearBtn.disabled=true;
+}
+function stopMonitor(){ 
+  clearInterval(monitorInterval); monitorInterval=null;
+  updateStatus("Stopped","bg-gray-500",false,"🛑");
+  startBtn.disabled=false; stopBtn.disabled=true;
+  simulateBtn.disabled=false; simulateClearBtn.disabled=false;
+}
+
+// ===================== Notification Permission =====================
 function requestPermission(){
   if(!("Notification" in window)){
     permissionSpan.textContent="Unsupported";
@@ -140,21 +196,22 @@ function requestPermission(){
     permissionSpan.textContent=permission.charAt(0).toUpperCase()+permission.slice(1);
     if(permission==="granted"){
       permissionSpan.className="text-green-400 font-medium";
-      requestBtn.disabled=true;
-      requestBtn.textContent="Permission Granted";
+      startBtn.disabled=false; simulateBtn.disabled=false; simulateClearBtn.disabled=false;
+      requestBtn.disabled=true; requestBtn.textContent="Permission Granted";
     } else if(permission==="denied"){
-      permissionSpan.className="text-red-400 font-medium";
-      requestBtn.disabled=true;
-      requestBtn.textContent="Permission Denied";
-    } else {
-      permissionSpan.className="text-yellow-400 font-medium";
-    }
+      permissionSpan.className="text-red-400 font-medium"; requestBtn.disabled=true; requestBtn.textContent="Permission Denied";
+    } else { permissionSpan.className="text-yellow-400 font-medium"; startBtn.disabled=true; }
   });
 }
-requestBtn.addEventListener("click", requestPermission);
 
-// Toggle dark/light mode
-document.getElementById("toggle-dark-btn").addEventListener("click",()=>{
+// ===================== Event Listeners =====================
+requestBtn.addEventListener("click", requestPermission);
+startBtn.addEventListener("click", startMonitor);
+stopBtn.addEventListener("click", stopMonitor);
+simulateBtn.addEventListener("click",()=>{ updateStatus("Simulated Alert Active",PASTEL_RED_HEX,true,"🚨"); });
+simulateClearBtn.addEventListener("click",()=>{ updateStatus("Simulated Clear Tone Played",PASTEL_GREEN_HEX,true,"🔔"); });
+
+toggleDarkBtn.addEventListener("click",()=>{
   if(document.body.style.backgroundColor==="var(--bg-main)"){
     document.body.style.backgroundColor="#ffffff";
     document.body.classList.remove("text-white"); 
@@ -165,6 +222,11 @@ document.getElementById("toggle-dark-btn").addEventListener("click",()=>{
     document.body.classList.add("text-white");
   }
 });
+
+// ===================== Initialization =====================
+window.onload = () => {
+  updateStatus("Awaiting Start","bg-gray-500",false,"⚪");
+};
 </script>
 </body>
 </html>
