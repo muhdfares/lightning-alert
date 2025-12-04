@@ -4,58 +4,25 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Lightning Alert Monitoring</title>
-
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 
 <style>
-html, body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
+:root {
+  --bg-main: #1C2434;
+  --card-bg: rgba(44, 53, 69, 0.85);
+  --accent-blue: #70A0F0;
+  --pastel-green: #90EE90;
+  --pastel-red: #F08080;
 }
 
 body {
   font-family: 'Inter', sans-serif;
-  background-image: url('bg.jpg');
+  margin:0;
+  padding:0;
+  background: url('bg.jpg') no-repeat center center fixed;
   background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
   color: white;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 1rem;
-}
-
-body::before {
-  content: "";
-  position: fixed;
-  top:0; left:0;
-  width:100%; height:100%;
-  background-color: rgba(28,36,52,0.65);
-  z-index: -1;
-}
-
-.logo-container {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 1rem;
-}
-.logo-container img {
-  height: 120px;
-  width: auto;
-}
-
-.card {
-  background-color: rgba(44,53,69,0.9);
-  padding: 1.5rem;
-  border-radius: 1rem;
-  max-width: 400px;
-  width: 100%;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-  border: 1px solid rgba(255,255,255,0.1);
 }
 
 .status-dot {
@@ -82,21 +49,21 @@ body::before {
 .toggle-button {
   cursor: pointer;
   padding: 0.5rem 1rem;
-  background-color: #70A0F0;
+  background-color: var(--accent-blue);
   color: white;
   font-weight: bold;
   border-radius: 0.5rem;
 }
 </style>
 </head>
-<body>
+<body class="min-h-screen flex items-center justify-center p-4">
 
-<div class="logo-container">
-  <img src="logo.png" alt="Our Tampines Hub Logo">
+<div class="absolute top-5 left-1/2 transform -translate-x-1/2">
+  <img src="logo.png" alt="Our Tampines Hub Logo" class="h-32 w-auto">
 </div>
 
-<div class="card">
-  <h1 class="text-2xl font-bold mb-4 text-[#70A0F0]">⚡ Lightning Alert Monitoring</h1>
+<div class="bg-[var(--card-bg)] p-5 rounded-xl w-full max-w-md shadow-2xl border border-blue-800/50 mt-40">
+  <h1 class="text-2xl font-bold mb-4 text-[var(--accent-blue)] text-center">⚡ Lightning Alert Monitoring</h1>
 
   <div class="mb-4 flex justify-between items-center bg-gray-900/40 p-3 rounded-lg border border-blue-500/30">
     <span id="status-message" class="text-lg font-semibold">Awaiting Start</span>
@@ -105,13 +72,13 @@ body::before {
 
   <div class="space-y-2 mb-4 text-sm">
     <p class="bg-gray-900/40 p-2 rounded border border-gray-700/50">
-      Local Time: <span id="current-time-display" class="text-[#70A0F0] font-medium">--:--:--</span>
+      Local Time: <span id="current-time-display" class="text-[var(--accent-blue)] font-medium">--:--:--</span>
     </p>
     <p class="bg-gray-900/40 p-2 rounded border border-gray-700/50">
-      Location: <span id="current-location" class="text-[#70A0F0] font-medium">Our Tampines Hub</span>
+      Location: <span id="current-location" class="text-[var(--accent-blue)] font-medium">Our Tampines Hub</span>
     </p>
     <p class="bg-gray-900/40 p-2 rounded border border-gray-700/50">
-      Temperature: <span id="current-temp" class="font-medium">--°C</span>
+      Temperature: <span id="current-temp" class="font-bold text-yellow-300">--°C</span>
     </p>
   </div>
 
@@ -119,47 +86,49 @@ body::before {
     Notification Status: <span id="current-permission" class="text-yellow-400 font-medium">Unknown</span>
   </p>
 
-  <div class="flex justify-between mb-2 gap-2">
-    <button id="simulate-alert-btn" disabled class="w-1/2 bg-red-600/80 p-2 rounded-lg font-semibold app-button">🚨 Simulate Alert</button>
-    <button id="simulate-clear-btn" disabled class="w-1/2 bg-amber-500/80 p-2 rounded-lg font-semibold app-button">🔔 All Clear</button>
-  </div>
-
   <div class="flex flex-col gap-2">
-    <button id="request-permission-btn" class="w-full bg-blue-700/80 p-2 rounded-lg font-semibold app-button">1. Request Notification</button>
-    <button id="start-monitor-btn" disabled class="w-full bg-green-700/80 p-2 rounded-lg font-semibold app-button">2. Start Monitor</button>
-    <button id="stop-monitor-btn" disabled class="w-full bg-red-700/80 p-2 rounded-lg font-semibold app-button">Stop Monitor</button>
+    <button id="request-permission-btn" class="w-full bg-blue-700/80 p-2 rounded-lg font-semibold app-button">Request Notification Permission</button>
     <button id="toggle-dark-btn" class="toggle-button mt-2">Toggle Dark/Light</button>
   </div>
 </div>
 
 <script>
-const statusMessage = document.getElementById("status-message");
-const statusIndicator = document.getElementById("status-indicator");
-const startBtn = document.getElementById("start-monitor-btn");
-const stopBtn = document.getElementById("stop-monitor-btn");
-const simulateBtn = document.getElementById("simulate-alert-btn");
-const simulateClearBtn = document.getElementById("simulate-clear-btn");
-const requestBtn = document.getElementById("request-permission-btn");
 const timeSpan = document.getElementById("current-time-display");
 const permissionSpan = document.getElementById("current-permission");
+const requestBtn = document.getElementById("request-permission-btn");
 const tempSpan = document.getElementById("current-temp");
-const toggleDarkBtn = document.getElementById("toggle-dark-btn");
 
-// Time
-function updateTime(){ timeSpan.textContent = new Date().toLocaleTimeString('en-GB'); }
-updateTime(); setInterval(updateTime,1000);
-
-// Status
-function updateStatus(text,color,pulse=false,symbol=""){
-  statusMessage.innerHTML = `<span class="mr-2 text-xl leading-none">${symbol}</span>${text}`;
-  statusIndicator.className = "status-dot";
-  statusIndicator.style.backgroundColor = color;
-  statusIndicator.classList.remove("pulse-red","pulse-green");
-  if(pulse && color==="#F08080") statusIndicator.classList.add("pulse-red");
-  if(pulse && color==="#90EE90") statusIndicator.classList.add("pulse-green");
+// Update time every second
+function updateTime() {
+  timeSpan.textContent = new Date().toLocaleTimeString('en-GB');
 }
+updateTime();
+setInterval(updateTime, 1000);
 
-// Notification
+// Fetch temperature from Data.gov.sg API
+async function fetchTemperature(){
+  try{
+    const res = await fetch("https://api.data.gov.sg/v1/environment/2-hour-weather-forecast");
+    const data = await res.json();
+    const forecastItem = data.items[0];
+    const tampinesForecast = forecastItem.forecasts.find(f => f.area.toUpperCase()==="TAMPINES");
+    if(tampinesForecast){
+      // Using simple color coding based on forecast text
+      const text = tampinesForecast.forecast.toLowerCase();
+      if(text.includes("thunder")) tempSpan.style.color = "#F08080";
+      else if(text.includes("cloudy")) tempSpan.style.color = "#90EE90";
+      else tempSpan.style.color = "#FFD700";
+      tempSpan.textContent = forecastItem.general.temperature.low.toFixed(1) + "°C"; // approximate
+    }
+  }catch(err){
+    tempSpan.textContent = "--°C";
+    tempSpan.style.color="#ffffff";
+  }
+}
+fetchTemperature();
+setInterval(fetchTemperature, 60000); // refresh every minute
+
+// Notification permission
 function requestPermission(){
   if(!("Notification" in window)){
     permissionSpan.textContent="Unsupported";
@@ -171,61 +140,31 @@ function requestPermission(){
     permissionSpan.textContent=permission.charAt(0).toUpperCase()+permission.slice(1);
     if(permission==="granted"){
       permissionSpan.className="text-green-400 font-medium";
-      startBtn.disabled=false; simulateBtn.disabled=false; simulateClearBtn.disabled=false;
       requestBtn.disabled=true;
+      requestBtn.textContent="Permission Granted";
     } else if(permission==="denied"){
-      permissionSpan.className="text-red-400 font-medium"; requestBtn.disabled=true; startBtn.disabled=true;
-    } else { permissionSpan.className="text-yellow-400 font-medium"; startBtn.disabled=true; }
+      permissionSpan.className="text-red-400 font-medium";
+      requestBtn.disabled=true;
+      requestBtn.textContent="Permission Denied";
+    } else {
+      permissionSpan.className="text-yellow-400 font-medium";
+    }
   });
 }
-
-// Temperature
-const TEMP_API="https://api.data.gov.sg/v1/environment/air-temperature";
-async function updateTemperature(){
-  try{
-    const tempRes = await fetch(TEMP_API);
-    const tempData = await tempRes.json();
-    const tempReading = tempData.items[0].readings[0];
-    const tempValue = tempReading ? tempReading.value : null;
-    if(tempValue !== null){
-      tempSpan.textContent = `${tempValue}°C`;
-      if(tempValue < 25) tempSpan.style.color = "#70C0F0";
-      else if(tempValue <= 30) tempSpan.style.color = "#90EE90";
-      else tempSpan.style.color = "#F08080";
-    } else {
-      tempSpan.textContent = "--°C";
-      tempSpan.style.color = "#70A0F0";
-    }
-  } catch(err){
-    tempSpan.textContent="--°C";
-    tempSpan.style.color = "#70A0F0";
-    console.error("Temp error:", err);
-  }
-}
-updateTemperature();
-setInterval(updateTemperature, 60000);
-
-// Events
 requestBtn.addEventListener("click", requestPermission);
-toggleDarkBtn.addEventListener("click",()=>{
+
+// Toggle dark/light mode
+document.getElementById("toggle-dark-btn").addEventListener("click",()=>{
   if(document.body.style.backgroundColor==="var(--bg-main)"){
     document.body.style.backgroundColor="#ffffff";
-    document.body.classList.remove("text-white"); document.body.classList.add("text-black");
+    document.body.classList.remove("text-white"); 
+    document.body.classList.add("text-black");
   } else {
     document.body.style.backgroundColor="var(--bg-main)";
-    document.body.classList.remove("text-black"); document.body.classList.add("text-white");
+    document.body.classList.remove("text-black"); 
+    document.body.classList.add("text-white");
   }
 });
-
-window.onload = ()=>{
-  if("Notification" in window){
-    const permission=Notification.permission;
-    permissionSpan.textContent=permission.charAt(0).toUpperCase()+permission.slice(1);
-    if(permission==="granted"){ permissionSpan.className="text-green-400 font-medium"; startBtn.disabled=false; simulateBtn.disabled=false; simulateClearBtn.disabled=false; requestBtn.disabled=true; requestBtn.textContent="Permission Granted"; }
-    else if(permission==="denied"){ permissionSpan.className="text-red-400 font-medium"; requestBtn.disabled=true; requestBtn.textContent="Permission Denied"; }
-  }
-};
 </script>
-
 </body>
 </html>
