@@ -4,13 +4,14 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Lightning Alert Monitoring</title>
+
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 
 <style>
 :root {
   --bg-main: #1C2434;
-  --card-bg: rgba(44, 53, 69, 0.85);
+  --card-bg: rgba(44,53,69,0.85);
   --accent-blue: #70A0F0;
   --pastel-green: #90EE90;
   --pastel-red: #F08080;
@@ -18,10 +19,9 @@
 
 body {
   font-family: 'Inter', sans-serif;
-  margin:0;
-  padding:0;
   background: url('bg.jpg') no-repeat center center fixed;
   background-size: cover;
+  transition: background-color 0.3s;
   color: white;
 }
 
@@ -31,8 +31,10 @@ body {
   border-radius: 50%;
   transition: all 0.3s;
 }
+
 .pulse-red { animation: pulse-red 1.5s infinite; }
 @keyframes pulse-red { 0%{box-shadow:0 0 0 0 rgba(240,128,128,1);} 70%{box-shadow:0 0 0 15px rgba(240,128,128,0);} 100%{box-shadow:0 0 0 0 rgba(240,128,128,0);} }
+
 .pulse-green { animation: pulse-green 1.5s infinite; }
 @keyframes pulse-green { 0%{box-shadow:0 0 0 0 rgba(144,238,144,1);} 70%{box-shadow:0 0 0 15px rgba(144,238,144,0);} 100%{box-shadow:0 0 0 0 rgba(144,238,144,0);} }
 
@@ -52,18 +54,24 @@ body {
   font-weight: bold;
   border-radius: 0.5rem;
 }
+
+.logo-img {
+  height: 150px;
+  width: auto;
+  display: block;
+}
 </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
+<body class="min-h-screen flex flex-col items-center justify-start p-4">
 
 <!-- Logo -->
-<div class="absolute top-5 left-1/2 transform -translate-x-1/2">
-  <img src="logo.png" alt="Our Tampines Hub Logo" class="h-32 w-auto">
+<div class="flex justify-center mt-4 mb-6">
+  <img src="logo.png" alt="Our Tampines Hub Logo" class="logo-img">
 </div>
 
-<!-- Card -->
-<div class="bg-[var(--card-bg)] p-5 rounded-xl w-full max-w-md shadow-2xl border border-blue-800/50 mt-40">
-  <h1 class="text-2xl font-bold mb-4 text-[var(--accent-blue)] text-center">⚡ Lightning Alert Monitoring</h1>
+<!-- Main Card -->
+<div class="bg-[var(--card-bg)] p-5 rounded-xl w-full max-w-md shadow-2xl border border-blue-800/50 backdrop-blur-sm">
+  <h1 class="text-3xl font-bold mb-4 text-[var(--accent-blue)] text-center">⚡ Lightning Alert Monitoring</h1>
 
   <!-- Status -->
   <div class="mb-4 flex justify-between items-center bg-gray-900/40 p-3 rounded-lg border border-blue-500/30">
@@ -71,16 +79,19 @@ body {
     <div id="status-indicator" class="status-dot bg-gray-500"></div>
   </div>
 
-  <!-- Time, Location, Temperature -->
+  <!-- Info Panel -->
   <div class="space-y-2 mb-4 text-sm">
     <p class="bg-gray-900/40 p-2 rounded border border-gray-700/50">
-      Local Time: <span id="current-time-display" class="text-[var(--accent-blue)] font-medium">--:--:-- | --</span>
+      Local Time: <span id="current-time-display" class="text-[var(--accent-blue)] font-medium">--:--:--</span>
     </p>
     <p class="bg-gray-900/40 p-2 rounded border border-gray-700/50">
-      Location: <span class="text-[var(--accent-blue)] font-medium">Our Tampines Hub</span>
+      Date: <span id="current-date-display" class="text-[var(--accent-blue)] font-medium">--</span>
     </p>
     <p class="bg-gray-900/40 p-2 rounded border border-gray-700/50">
-      Temperature: <span id="current-temp" class="font-bold text-yellow-300">--°C</span>
+      Location: <span id="current-location" class="text-[var(--accent-blue)] font-medium">Our Tampines Hub</span>
+    </p>
+    <p class="bg-gray-900/40 p-2 rounded border border-gray-700/50">
+      Temperature: <span id="current-temp" class="text-yellow-400 font-medium">--°C</span>
     </p>
   </div>
 
@@ -90,200 +101,76 @@ body {
   </p>
 
   <!-- Buttons -->
-  <div class="flex justify-between mb-2 gap-2">
-    <button id="simulate-alert-btn" disabled class="w-1/2 bg-red-600/80 p-2 rounded-lg font-semibold app-button">🚨 Simulate Alert</button>
-    <button id="simulate-clear-btn" disabled class="w-1/2 bg-amber-500/80 p-2 rounded-lg font-semibold app-button">🔔 All Clear</button>
-  </div>
-
   <div class="flex flex-col gap-2">
-    <button id="request-permission-btn" class="w-full bg-blue-700/80 p-2 rounded-lg font-semibold app-button">1. Request Notification Permission</button>
+    <button id="request-permission-btn" class="w-full bg-blue-700/80 p-2 rounded-lg font-semibold app-button">1. Request Notification</button>
     <button id="start-monitor-btn" disabled class="w-full bg-green-700/80 p-2 rounded-lg font-semibold app-button">2. Start Monitor</button>
     <button id="stop-monitor-btn" disabled class="w-full bg-red-700/80 p-2 rounded-lg font-semibold app-button">Stop Monitor</button>
+    <button id="simulate-alert-btn" disabled class="w-full bg-red-600/80 p-2 rounded-lg font-semibold app-button">🚨 Simulate Alert</button>
+    <button id="simulate-clear-btn" disabled class="w-full bg-amber-500/80 p-2 rounded-lg font-semibold app-button">🔔 All Clear</button>
     <button id="toggle-dark-btn" class="toggle-button mt-2">Toggle Dark/Light</button>
   </div>
 </div>
 
 <script>
-const CHECK_INTERVAL_MS = 30000;
-let monitorInterval = null;
-let isAlertActive = false;
-let lastAlertTime = 0;
+// ===================== Time & Date =====================
+const timeSpan = document.getElementById("current-time-display");
+const dateSpan = document.getElementById("current-date-display");
 
-const PASTEL_RED_HEX = "#F08080";
-const PASTEL_GREEN_HEX = "#90EE90";
-const ACCENT_BLUE_VAR = "var(--accent-blue)";
+function updateTimeDate() {
+  const now = new Date();
+  timeSpan.textContent = now.toLocaleTimeString('en-GB');
+  dateSpan.textContent = now.toLocaleDateString('en-GB', {weekday:'short', day:'numeric', month:'short', year:'numeric'});
+}
+updateTimeDate();
+setInterval(updateTimeDate, 1000);
 
+// ===================== Temperature =====================
+const tempSpan = document.getElementById("current-temp");
+async function fetchTemperature(){
+  try {
+    const res = await fetch("https://api.data.gov.sg/v1/environment/air-temperature");
+    const data = await res.json();
+    const tampinesStation = data.metadata.stations.find(s => s.name.toLowerCase().includes("tampines"));
+    if(tampinesStation){
+      const latestReading = data.items[0].readings.find(r => r.station_id === tampinesStation.id);
+      tempSpan.textContent = latestReading ? latestReading.value.toFixed(1) + "°C" : "--°C";
+    } else {
+      tempSpan.textContent = "--°C";
+    }
+  } catch(err){
+    console.error("Error fetching temperature:", err);
+    tempSpan.textContent = "--°C";
+  }
+}
+fetchTemperature();
+setInterval(fetchTemperature, 60000);
+
+// ===================== Status =====================
 const statusMessage = document.getElementById("status-message");
 const statusIndicator = document.getElementById("status-indicator");
-const startBtn = document.getElementById("start-monitor-btn");
-const stopBtn = document.getElementById("stop-monitor-btn");
-const simulateBtn = document.getElementById("simulate-alert-btn");
-const simulateClearBtn = document.getElementById("simulate-clear-btn");
-const requestBtn = document.getElementById("request-permission-btn");
-const timeSpan = document.getElementById("current-time-display");
-const tempSpan = document.getElementById("current-temp");
-const permissionSpan = document.getElementById("current-permission");
 
-let audioContext = null;
-let ringOscillator = null;
-let ringGain = null;
-
-// ===================== Time & Date =====================
-function updateTime() {
-  const now = new Date();
-  const timeStr = now.toLocaleTimeString('en-GB');
-  const dateStr = now.toLocaleDateString('en-GB', { weekday:'short', day:'2-digit', month:'short', year:'numeric' });
-  timeSpan.textContent = `${timeStr} | ${dateStr}`;
-}
-updateTime();
-setInterval(updateTime, 1000);
-
-// ===================== Audio =====================
-function initAudioOnce() {
-  if(audioContext) return;
-  audioContext = new (window.AudioContext||window.webkitAudioContext)();
-  ringOscillator = audioContext.createOscillator();
-  ringOscillator.frequency.value = 440;
-  ringOscillator.type = "sine";
-  ringGain = audioContext.createGain();
-  ringGain.gain.value = 0;
-  ringOscillator.connect(ringGain);
-  ringGain.connect(audioContext.destination);
-  ringOscillator.start();
-}
-function resumeAudioContext(){ if(audioContext && audioContext.state==='suspended') audioContext.resume(); }
-function stopSound(){ if(ringGain){ const now = audioContext.currentTime; ringGain.gain.cancelScheduledValues(now); ringGain.gain.setValueAtTime(0, now); } }
-
-function playLightningAlert(){
-  initAudioOnce();
-  resumeAudioContext();
-  if(!ringGain || !audioContext) return;
-  const duration = 3;
-  let t = audioContext.currentTime, end = t+duration;
-  const interval = 0.4;
-  ringGain.gain.cancelScheduledValues(t);
-  ringGain.gain.setValueAtTime(0,t);
-  while(t<end){
-    ringGain.gain.setValueAtTime(0.5,t); t+=interval/2;
-    if(t<end){ ringGain.gain.setValueAtTime(0,t); t+=interval/2; }
-  }
-  ringGain.gain.setValueAtTime(0,end);
-}
-
-function playAllClearTone(){
-  initAudioOnce();
-  resumeAudioContext();
-  if(!audioContext || audioContext.state!=='running') return;
-  const now = audioContext.currentTime;
-  const duration = 3;
-  const notes = [880,1046,1318]; 
-  const noteDuration = duration/notes.length;
-  notes.forEach((freq,index)=>{
-    const osc = audioContext.createOscillator();
-    const gain = audioContext.createGain();
-    osc.frequency.value = freq; osc.type="sine";
-    osc.connect(gain); gain.connect(audioContext.destination);
-    const startTime = now + index*noteDuration;
-    const endTime = startTime+noteDuration;
-    gain.gain.setValueAtTime(0,startTime);
-    gain.gain.linearRampToValueAtTime(0.4,startTime+0.05);
-    gain.gain.linearRampToValueAtTime(0,endTime);
-    osc.start(startTime); osc.stop(endTime);
-    osc.onended=()=>{ osc.disconnect(); gain.disconnect(); };
-  });
-}
-
-// ===================== Status UI =====================
 function updateStatus(text, color, pulse=false, symbol=""){
   statusMessage.innerHTML = `<span class="mr-2 text-xl leading-none">${symbol}</span>${text}`;
   statusIndicator.className = "status-dot";
   statusIndicator.style.backgroundColor = color;
   statusIndicator.classList.remove("pulse-red","pulse-green");
-  if(pulse && color===PASTEL_RED_HEX) statusIndicator.classList.add("pulse-red");
-  if(pulse && color===PASTEL_GREEN_HEX) statusIndicator.classList.add("pulse-green");
+  if(pulse && (color==="#F08080")) statusIndicator.classList.add("pulse-red");
+  if(pulse && (color==="#90EE90")) statusIndicator.classList.add("pulse-green");
 }
 
-// ===================== Temperature =====================
-async function fetchTemperature(){
-  try{
-    const res = await fetch("https://api.data.gov.sg/v1/environment/2-hour-weather-forecast");
-    const data = await res.json();
-    const general = data.items[0].general;
-    tempSpan.textContent = general.temperature.low.toFixed(1)+"°C";
-    tempSpan.style.color="#FFD700";
-  }catch(err){ tempSpan.textContent="--°C"; tempSpan.style.color="#ffffff"; }
-}
-fetchTemperature();
-setInterval(fetchTemperature, 60000);
+// ===================== Buttons =====================
+const startBtn = document.getElementById("start-monitor-btn");
+const stopBtn = document.getElementById("stop-monitor-btn");
+const simulateBtn = document.getElementById("simulate-alert-btn");
+const simulateClearBtn = document.getElementById("simulate-clear-btn");
+const requestBtn = document.getElementById("request-permission-btn");
+const toggleDarkBtn = document.getElementById("toggle-dark-btn");
+const permissionSpan = document.getElementById("current-permission");
 
-// ===================== Alert Logic =====================
-const API_URL="https://api.data.gov.sg/v1/environment/2-hour-weather-forecast";
-const TARGET_AREA="Tampines";
-let isMonitoring=false;
+let monitorInterval = null;
+let isAlertActive = false;
 
-async function checkForecast(){
-  try{
-    const res = await fetch(API_URL);
-    const data = await res.json();
-    const forecastItem=data.items[0];
-    const areaForecast=forecastItem.forecasts.find(f=>f.area.toUpperCase()===TARGET_AREA.toUpperCase());
-    const forecastText=areaForecast?areaForecast.forecast:"Data unavailable";
-
-    const alertKeywords=["Thundery","Thunderstorms"];
-    const safeKeywords=["Fair","Cloudy","Showers"];
-
-    const isAlert=alertKeywords.some(k=>forecastText.toLowerCase().includes(k.toLowerCase()));
-
-    if(isAlert){
-      if(!isAlertActive && Date.now()-lastAlertTime>3*60*1000){
-        isAlertActive=true;
-        playLightningAlert();
-        updateStatus("LIGHTNING ALERT",PASTEL_RED_HEX,true,"🚨⛈️");
-        if(Notification.permission==="granted"){
-          new Notification("Lightning Alert",{body:`Forecast: ${forecastText}`,icon:"https://placehold.co/64x64/F08080/000000?text=⚡️"});
-        }
-        lastAlertTime=Date.now();
-      } else {
-        updateStatus("LIGHTNING ALERT",PASTEL_RED_HEX,true,"🚨⛈️");
-      }
-    } else if(isAlertActive && safeKeywords.some(k=>forecastText.includes(k))){
-      isAlertActive=false;
-      playAllClearTone();
-      updateStatus("ALL CLEAR: Situation Safe",PASTEL_GREEN_HEX,true,"🔔✨");
-      if(Notification.permission==="granted"){
-        new Notification("Lightning Alert Cleared",{body:"Area is now safe.",icon:"https://placehold.co/64x64/FFBF00/000000?text=🔔"});
-      }
-    } else if(!isAlertActive){
-      updateStatus(`Safe: ${forecastText}`,PASTEL_GREEN_HEX,true,"✅☀️");
-    }
-  }catch(err){
-    updateStatus("Error fetching forecast", "bg-amber-500", false, "⚠️");
-    console.error(err);
-  }
-}
-
-// ===================== Monitor Control =====================
-function startMonitor(){ 
-  isMonitoring=true;
-  initAudioOnce(); resumeAudioContext();
-  updateStatus("Monitoring...",ACCENT_BLUE_VAR,false,"🔍");
-  checkForecast();
-  if(monitorInterval) clearInterval(monitorInterval);
-  monitorInterval=setInterval(checkForecast,CHECK_INTERVAL_MS);
-  startBtn.disabled=true; stopBtn.disabled=false;
-  simulateBtn.disabled=false; simulateClearBtn.disabled=false;
-}
-function stopMonitor(){ 
-  isMonitoring=false;
-  clearInterval(monitorInterval); monitorInterval=null;
-  stopSound(); isAlertActive=false;
-  updateStatus("Stopped","bg-gray-500",false,"🛑");
-  startBtn.disabled=false; stopBtn.disabled=true;
-  simulateBtn.disabled=true; simulateClearBtn.disabled=true;
-}
-
-// ===================== Notification Permission =====================
-function requestPermission(){
+requestBtn.addEventListener("click", ()=>{
   if(!("Notification" in window)){
     permissionSpan.textContent="Unsupported";
     permissionSpan.className="text-red-400 font-medium";
@@ -291,48 +178,55 @@ function requestPermission(){
     return;
   }
   Notification.requestPermission().then(permission=>{
-    permissionSpan.textContent=permission.charAt(0).toUpperCase()+permission.slice(1);
+    permissionSpan.textContent = permission.charAt(0).toUpperCase() + permission.slice(1);
     if(permission==="granted"){
       permissionSpan.className="text-green-400 font-medium";
       startBtn.disabled=false; simulateBtn.disabled=false; simulateClearBtn.disabled=false;
-      requestBtn.disabled=true; requestBtn.textContent="Permission Granted";
-      resumeAudioContext();
-    } else if(permission==="denied"){
-      permissionSpan.className="text-red-400 font-medium"; requestBtn.disabled=true;
-    } else { permissionSpan.className="text-yellow-400 font-medium"; startBtn.disabled=true; }
+      requestBtn.disabled=true;
+    } else {
+      permissionSpan.className="text-red-400 font-medium"; requestBtn.disabled=true; startBtn.disabled=true;
+    }
   });
-}
+});
 
-// ===================== Event Listeners =====================
-requestBtn.addEventListener("click", requestPermission);
-startBtn.addEventListener("click", startMonitor);
-stopBtn.addEventListener("click", stopMonitor);
+startBtn.addEventListener("click", ()=>{
+  updateStatus("Monitoring...", "var(--accent-blue)", false, "🔍");
+  if(monitorInterval) clearInterval(monitorInterval);
+  monitorInterval = setInterval(()=>{
+    const alert = Math.random()>0.7; // placeholder logic
+    if(alert){
+      updateStatus("LIGHTNING ALERT","#F08080",true,"🚨⛈️");
+      isAlertActive=true;
+    } else {
+      updateStatus("Safe: Clear","#90EE90",true,"✅☀️");
+      isAlertActive=false;
+    }
+  },30000);
+  startBtn.disabled=true;
+  stopBtn.disabled=false;
+});
 
-simulateBtn.addEventListener("click",()=>{ if(!isAlertActive){ isAlertActive=true; playLightningAlert(); updateStatus("Simulated ALERT",PASTEL_RED_HEX,true,"🚨⛈️"); } });
-simulateClearBtn.addEventListener("click",()=>{ if(isAlertActive){ isAlertActive=false; playAllClearTone(); updateStatus("Simulated Clear",PASTEL_GREEN_HEX,true,"🔔✨"); } });
+stopBtn.addEventListener("click", ()=>{
+  clearInterval(monitorInterval);
+  monitorInterval = null;
+  updateStatus("Stopped","gray",false,"🛑");
+  startBtn.disabled=false;
+  stopBtn.disabled=true;
+});
 
-toggleDarkBtn.addEventListener("click",()=>{
-  if(document.body.style.backgroundColor==="var(--bg-main)"){
-    document.body.style.backgroundColor="#ffffff";
-    document.body.classList.remove("text-white"); document.body.classList.add("text-black");
+simulateBtn.addEventListener("click",()=>{ updateStatus("Simulated Alert","#F08080",true,"🚨⛈️"); });
+simulateClearBtn.addEventListener("click",()=>{ updateStatus("Simulated Clear","#90EE90",true,"✅☀️"); });
+
+toggleDarkBtn.addEventListener("click", ()=>{
+  if(document.body.style.color==="white"){
+    document.body.style.color="black";
   } else {
-    document.body.style.backgroundColor="var(--bg-main)";
-    document.body.classList.remove("text-black"); document.body.classList.add("text-white");
+    document.body.style.color="white";
   }
 });
 
-// ===================== Initialization =====================
-window.onload = () => {
-  updateStatus("Awaiting Start","bg-gray-500",false,"⚪");
-  updateTime();
-  fetchTemperature();
-  if("Notification" in window){
-    const permission=Notification.permission;
-    permissionSpan.textContent=permission.charAt(0).toUpperCase()+permission.slice(1);
-    if(permission==="granted"){ permissionSpan.className="text-green-400 font-medium"; startBtn.disabled=false; simulateBtn.disabled=false; simulateClearBtn.disabled=false; requestBtn.disabled=true; requestBtn.textContent="Permission Granted"; }
-    else if(permission==="denied"){ permissionSpan.className="text-red-400 font-medium"; requestBtn.disabled=true; requestBtn.textContent="Permission Denied"; }
-  }
-  initAudioOnce();
+window.onload = ()=>{
+  updateStatus("Awaiting Start","gray",false,"⚪");
 };
 </script>
 </body>
