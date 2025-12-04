@@ -9,58 +9,63 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 
 <style>
+/* --- DARK PASTEL COLOR PALETTE --- */
 :root {
-  --bg-main: #1C2434;
-  --card-bg: #2C3545;
-  --accent-blue: #70A0F0;
-  --pastel-green: #90EE90;
-  --pastel-red: #F08080;
+  --bg-main: #1C2434; /* Soft dark indigo/blue-grey background */
+  --card-bg: #2C3545; /* Slightly lighter card background */
+  --accent-blue: #70A0F0; /* Soft, light blue for headers/time */
+  --pastel-green: #90EE90; /* Soft mint green (safe) */
+  --pastel-red: #F08080; /* Light coral/salmon (alert) */
 }
 
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter', sans-serif;
+  /* Applying main background color */
+  background-color: var(--bg-main);
 }
 
 .status-dot {
-  width: 1.25rem;
-  height: 1.25rem;
-  border-radius: 50%;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  transition: all 0.3s;
 }
 
+/* Pulse colors updated to use the new pastel shades */
 .pulse-red {
-  animation: pulse-red 1.5s infinite;
+  animation: pulse-red 1.5s infinite;
 }
 
 @keyframes pulse-red {
-  0% { box-shadow: 0 0 0 0 rgba(240,128,128,1); }
-  70% { box-shadow: 0 0 0 15px rgba(240,128,128,0); }
-  100% { box-shadow: 0 0 0 0 rgba(240,128,128,0); }
+  0% { box-shadow: 0 0 0 0 rgba(240,128,128,1); } /* Uses #F08080 */
+  70% { box-shadow: 0 0 0 15px rgba(240,128,128,0); }
+  100% { box-shadow: 0 0 0 0 rgba(240,128,128,0); }
 }
 
 .pulse-green {
-  animation: pulse-green 1.5s infinite;
+  animation: pulse-green 1.5s infinite;
 }
 
 @keyframes pulse-green {
-  0% { box-shadow: 0 0 0 0 rgba(144,238,144,1); }
-  70% { box-shadow: 0 0 0 15px rgba(144,238,144,0); }
-  100% { box-shadow: 0 0 0 0 rgba(144,238,144,0); }
+  0% { box-shadow: 0 0 0 0 rgba(144,238,144,1); } /* Uses #90EE90 */
+  70% { box-shadow: 0 0 0 15px rgba(144,238,144,0); }
+  100% { box-shadow: 0 0 0 0 rgba(144,238,144,0); }
 }
 
 .app-button {
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,.25);
-  transition: transform .15s, box-shadow .15s;
-  border: 1px solid rgba(255,255,255,.1);
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,.25);
+  transition: transform .15s, box-shadow .15s;
+  border: 1px solid rgba(255,255,255,.1);
 }
 
 .app-button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 10px -3px rgba(0,0,0,.45);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 10px -3px rgba(0,0,0,.45);
 }
 
 .app-button:disabled {
-  opacity: .6;
-  cursor: not-allowed;
+  opacity: .6;
+  cursor: not-allowed;
 }
 </style>
 </head>
@@ -69,82 +74,418 @@ body {
 
 <div class="bg-[var(--card-bg)] p-5 rounded-xl w-full max-w-md shadow-2xl border border-blue-800/50">
 
-  <h1 class="text-2xl font-bold mb-4 text-[var(--accent-blue)]">
-    ⚡ Lightning Alert Monitoring
-  </h1>
+  <h1 class="text-2xl font-bold mb-4 text-[var(--accent-blue)]">
+    ⚡ Lightning Alert Monitoring
+  </h1>
 
-  <div class="mb-4 flex justify-between items-center bg-gray-900/40 p-3 rounded-lg border border-blue-500/30">
-    <span id="status-message" class="text-lg font-semibold">Awaiting Start</span>
-    <div id="status-indicator" class="status-dot bg-gray-500"></div>
-  </div>
+  <div class="mb-4 flex justify-between items-center bg-gray-900/40 p-3 rounded-lg border border-blue-500/30">
+    <span id="status-message" class="text-lg font-semibold"></span>
+    <div id="status-indicator" class="status-dot bg-gray-500"></div>
+  </div>
 
-  <div class="space-y-2 mb-4 text-sm">
-    <p class="bg-gray-900/40 p-2 rounded border border-gray-700/50">
-      Local Time:
-      <span id="current-time-display" class="text-[var(--accent-blue)] font-medium">--:--:--</span>
-    </p>
-    <p class="bg-gray-900/40 p-2 rounded border border-gray-700/50">
-      Location:
-      <span class="text-[var(--accent-blue)] font-medium">Our Tampines Hub</span>
-    </p>
-  </div>
+  <div class="space-y-2 mb-4 text-sm">
+    <p class="bg-gray-900/40 p-2 rounded border border-gray-700/50">
+      Local Time:
+      <span id="current-time-display" class="text-[var(--accent-blue)] font-medium">--:--:--</span>
+    </p>
+    <p class="bg-gray-900/40 p-2 rounded border border-gray-700/50">
+      Location:
+      <span id="current-location" class="text-[var(--accent-blue)] font-medium">Our Tampines Hub</span>
+    </p>
+  </div>
 
-  <p class="text-sm mb-4 bg-gray-900/40 p-2 rounded border border-gray-700/50">
-    Notification Status:
-    <span id="current-permission" class="text-yellow-400 font-medium">Unknown</span>
-  </p>
+  <p class="text-sm mb-4 bg-gray-900/40 p-2 rounded border border-gray-700/50">
+    Notification Status:
+    <span id="current-permission" class="text-yellow-400 font-medium">Unknown</span>
+  </p>
 
-  <!-- ✅ CLEAN BUTTON STACK -->
-  <div class="flex flex-col gap-2">
-    <button id="request-permission-btn"
-      class="w-full bg-blue-700/80 p-2 rounded-lg font-semibold app-button">
-      1. Request Notification Permission
-    </button>
+    <div class="flex flex-col gap-2">
+    <button id="request-permission-btn"
+      class="w-full bg-blue-700/80 p-2 rounded-lg font-semibold app-button">
+      1. Request Notification Permission
+    </button>
 
-    <button id="start-monitor-btn" disabled
-      class="w-full bg-green-700/80 p-2 rounded-lg font-semibold app-button">
-      2. Start Monitor
-    </button>
+    <button id="start-monitor-btn" disabled
+      class="w-full bg-green-700/80 p-2 rounded-lg font-semibold app-button">
+      2. Start Monitor
+    </button>
 
-    <button id="simulate-alert-btn" disabled
-      class="w-full bg-red-600/80 p-2 rounded-lg font-semibold app-button">
-      3. Simulate Lightning Alert
-    </button>
+    <button id="simulate-alert-btn" disabled
+      class="w-full bg-red-600/80 p-2 rounded-lg font-semibold app-button">
+      3. Simulate Lightning Alert
+    </button>
 
-    <button id="simulate-clear-btn" disabled
-      class="w-full bg-amber-500/80 p-2 rounded-lg font-semibold app-button">
-      Simulate All Clear
-    </button>
+    <button id="simulate-clear-btn" disabled
+      class="w-full bg-amber-500/80 p-2 rounded-lg font-semibold app-button">
+      Simulate All Clear
+    </button>
 
-    <button id="stop-monitor-btn" disabled
-      class="w-full bg-red-700/80 p-2 rounded-lg font-semibold app-button">
-      Stop Monitor
-    </button>
-  </div>
+    <button id="stop-monitor-btn" disabled
+      class="w-full bg-red-700/80 p-2 rounded-lg font-semibold app-button">
+      Stop Monitor
+    </button>
+    
+  </div>
 
 </div>
 
 <script>
-/* --- TIME --- */
-const timeSpan = document.getElementById("current-time-display");
-setInterval(() => {
-  timeSpan.textContent = new Date().toLocaleTimeString("en-GB");
-}, 1000);
+const CHECK_INTERVAL_MS = 30000; // 30s
+let monitorInterval = null;
+let isAlertActive = false; // Track if a lightning alert is currently active
 
-/* --- STATUS UI --- */
+// DOM Elements
 const statusMessage = document.getElementById("status-message");
 const statusIndicator = document.getElementById("status-indicator");
+const startBtn = document.getElementById("start-monitor-btn");
+const stopBtn = document.getElementById("stop-monitor-btn");
+const simulateBtn = document.getElementById("simulate-alert-btn");
+const simulateClearBtn = document.getElementById("simulate-clear-btn");
+const requestBtn = document.getElementById("request-permission-btn");
+const timeSpan = document.getElementById("current-time-display");
+const permissionSpan = document.getElementById("current-permission");
+const locationSpan = document.getElementById("current-location");
 
-function updateStatus(text, color, pulse=false) {
-  statusMessage.textContent = text;
-  statusIndicator.className = "status-dot";
-  statusIndicator.style.backgroundColor = color;
-  if (pulse && color === "#F08080") statusIndicator.classList.add("pulse-red");
-  if (pulse && color === "#90EE90") statusIndicator.classList.add("pulse-green");
+// Define color constants
+const PASTEL_RED_HEX = "#F08080";
+const PASTEL_GREEN_HEX = "#90EE90";
+const ACCENT_BLUE_VAR = "var(--accent-blue)";
+
+// Map Tailwind classes to Hex codes for the indicator dot (FIX)
+const COLOR_MAP = {
+    "bg-gray-500": "#6B7280", // Tailwind gray-500
+    "bg-amber-500": "#F59E0B", // Tailwind amber-500
+    "bg-amber-400": "#FBBE24", // Tailwind amber-400
+};
+
+
+// =========================================================
+// TIME DISPLAY
+function updateTime() {
+    // Using en-GB for 24-hour clock
+    timeSpan.textContent = new Date().toLocaleTimeString('en-GB'); 
+}
+// Start immediate and set interval 
+updateTime();
+setInterval(updateTime, 1000);
+
+// =========================================================
+// STATUS UI (FIXED to handle all color inputs)
+function updateStatus(text, color, pulse=false, symbol="") {
+    // Combine symbol and text using innerHTML
+    statusMessage.innerHTML = `<span class="mr-2 text-xl leading-none">${symbol}</span>${text}`;
+    statusIndicator.className = "status-dot";
+    
+    // Resolve color: use map if Tailwind class is passed, otherwise use the value directly
+    let indicatorColor = COLOR_MAP[color] || color;
+
+    // Apply background color directly (handles hex and var(--))
+    statusIndicator.style.backgroundColor = indicatorColor;
+    
+    // Manage pulse classes based on defined hex colors
+    if (pulse && indicatorColor === PASTEL_RED_HEX) {
+        statusIndicator.classList.add("pulse-red");
+    } else if (pulse && indicatorColor === PASTEL_GREEN_HEX) {
+        statusIndicator.classList.add("pulse-green");
+    } else {
+        // Clear pulse if not needed
+        statusIndicator.classList.remove("pulse-red", "pulse-green");
+    }
 }
 
-/* --- INITIAL STATE --- */
-updateStatus("Awaiting Start", "#6B7280");
+/* =========================================================
+    ✅ AUDIO ALERT LOGIC 
+    ========================================================= */
+
+let audioContext = null;
+let ringOscillator = null;
+let ringGain = null;
+let clearOscillator = null;
+let clearGain = null;
+
+function resumeAudioContext() {
+    if (audioContext && audioContext.state === 'suspended') {
+        audioContext.resume();
+    }
+}
+
+function initAudioOnce() {
+    if (audioContext) return;
+
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    
+    ringOscillator = audioContext.createOscillator();
+    ringOscillator.frequency.value = 440;
+    ringOscillator.type = "sine";
+
+    ringGain = audioContext.createGain();
+    ringGain.gain.value = 0;
+
+    ringOscillator.connect(ringGain);
+    ringGain.connect(audioContext.destination);
+    
+    ringOscillator.start(0); 
+}
+
+function stopSound() {
+    if (ringGain && audioContext) {
+        const now = audioContext.currentTime;
+        ringGain.gain.cancelScheduledValues(now);
+        ringGain.gain.setValueAtTime(0, now);
+    }
+}
+
+function playAllClearTone() {
+    initAudioOnce();
+    resumeAudioContext();
+
+    if (!audioContext || audioContext.state !== 'running') return;
+
+    const now = audioContext.currentTime;
+
+    clearOscillator = audioContext.createOscillator();
+    clearGain = audioContext.createGain();
+
+    clearOscillator.frequency.value = 880; 
+    clearOscillator.type = "square";
+
+    clearOscillator.connect(clearGain);
+    clearGain.connect(audioContext.destination);
+
+    const duration = 0.3;
+    
+    clearGain.gain.setValueAtTime(0, now);
+    clearGain.gain.linearRampToValueAtTime(0.4, now + 0.05);
+    clearGain.gain.linearRampToValueAtTime(0, now + duration);
+
+    clearOscillator.start(now);
+    clearOscillator.stop(now + duration);
+    
+    clearOscillator.onended = () => {
+        if (clearOscillator) {
+            clearOscillator.disconnect();
+            clearGain.disconnect();
+            clearOscillator = null;
+            clearGain = null;
+        }
+    };
+}
+
+
+function playPhoneRing(durationMs = 8000) { 
+    initAudioOnce();
+    resumeAudioContext(); 
+    
+    if (!ringGain || audioContext.state !== 'running') return;
+
+    const now = audioContext.currentTime;
+    
+    ringGain.gain.cancelScheduledValues(now);
+    ringGain.gain.setValueAtTime(0, now); 
+    
+    let t = now;
+    const end = t + durationMs / 1000;
+    const ringInterval = 0.4;
+
+    while (t < end) {
+        ringGain.gain.setValueAtTime(0.5, t);
+        t += ringInterval / 2;
+        
+        if (t < end) {
+            ringGain.gain.setValueAtTime(0, t);
+            t += ringInterval / 2;
+        }
+    }
+    ringGain.gain.setValueAtTime(0, end);
+}
+
+// =========================================================
+// ALERT CONTROL FUNCTIONS
+
+function triggerAlert(forecast="Thunderstorm detected") {
+    isAlertActive = true;
+    
+    playPhoneRing();
+    
+    updateStatus("LIGHTNING ALERT", PASTEL_RED_HEX, true, "🚨⛈️");
+
+    if(Notification.permission === "granted") {
+        new Notification("Lightning Alert", {
+            body: forecast,
+            icon: "https://placehold.co/64x64/F08080/000000?text=⚡️"
+        });
+    }
+}
+
+function clearAlert() {
+    stopSound();
+    isAlertActive = false;
+
+    playAllClearTone(); 
+
+    // FIX: Passing Tailwind class, which is mapped in updateStatus
+    updateStatus("ALL CLEAR: Situation Safe", "bg-amber-500", false, "🔔✨"); 
+
+    if(Notification.permission === "granted") {
+        new Notification("Lightning Alert Cleared", {
+            body: "The area is now safe. Monitoring is continuing.",
+            icon: "https://placehold.co/64x64/FFBF00/000000?text=🔔"
+        });
+    }
+}
+
+
+// =========================================================
+// FETCH WEATHER FORECAST
+const API_URL = "https://api.data.gov.sg/v1/environment/2-hour-weather-forecast";
+const TARGET_AREA = "Tampines";
+
+async function checkForecast() {
+    try {
+        const res = await fetch(API_URL);
+        const data = await res.json();
+        const forecastItem = data.items[0];
+        const areaForecast = forecastItem.forecasts.find(f => f.area.toUpperCase() === TARGET_AREA.toUpperCase());
+        const forecastText = areaForecast ? areaForecast.forecast : "Data unavailable";
+
+        const alertKeywords = ["Thunder", "TShowers"];
+        const isAlert = alertKeywords.some(k => forecastText.toLowerCase().includes(k.toLowerCase()));
+
+        if(isAlert){
+            if (!isAlertActive) {
+                triggerAlert(`Forecast: ${forecastText}`);
+            } else {
+                updateStatus("LIGHTNING ALERT", PASTEL_RED_HEX, true, "🚨⛈️");
+            }
+        } else {
+            if (isAlertActive) {
+                clearAlert();
+            } else {
+                updateStatus(`Safe: ${forecastText}`, PASTEL_GREEN_HEX, true, "✅☀️");
+            }
+        }
+    } catch(err) {
+        // FIX: Passing Tailwind class, which is mapped in updateStatus
+        updateStatus("Error fetching forecast", "bg-amber-500", false, "⚠️");
+        console.error(err);
+    }
+}
+
+// =========================================================
+// MONITOR CONTROL
+
+function startMonitor() {
+    initAudioOnce();
+    resumeAudioContext();
+    
+    updateStatus("Monitoring...", ACCENT_BLUE_VAR, false, "🔍");
+    checkForecast();
+    
+    if (monitorInterval) clearInterval(monitorInterval);
+    monitorInterval = setInterval(checkForecast, CHECK_INTERVAL_MS);
+    
+    startBtn.disabled = true;
+    stopBtn.disabled = false;
+    simulateBtn.disabled = true;
+    simulateClearBtn.disabled = true;
+}
+
+function stopMonitor() {
+    clearInterval(monitorInterval);
+    monitorInterval = null;
+    
+    stopSound();
+    isAlertActive = false;
+    
+    // FIX: Passing Tailwind class, which is mapped in updateStatus
+    updateStatus("Stopped", "bg-gray-500", false, "🛑");
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+    simulateBtn.disabled = false;
+    simulateClearBtn.disabled = false;
+}
+
+// =========================================================
+// NOTIFICATION PERMISSION FLOW
+
+function requestPermission() {
+    if(!("Notification" in window)) return;
+
+    Notification.requestPermission().then(permission => {
+        permissionSpan.textContent = permission.charAt(0).toUpperCase() + permission.slice(1);
+        if(permission === "granted"){
+            permissionSpan.className = "text-green-400 font-medium";
+            startBtn.disabled = false;
+            simulateBtn.disabled = false;
+            simulateClearBtn.disabled = false;
+            requestBtn.disabled = true;
+            requestBtn.textContent = "Permission Granted";
+        } else if(permission === "denied"){
+            permissionSpan.className = "text-red-400 font-medium";
+            requestBtn.disabled = true;
+            requestBtn.textContent = "Permission Denied";
+        }
+    });
+}
+
+// =========================================================
+// EVENT LISTENERS & INITIALIZATION
+
+requestBtn.addEventListener("click", requestPermission);
+startBtn.addEventListener("click", startMonitor);
+stopBtn.addEventListener("click", stopMonitor);
+
+// Simulate Lightning Alert Button
+simulateBtn.addEventListener("click", () => {
+    if (!isAlertActive) {
+        initAudioOnce(); 
+        resumeAudioContext(); 
+        triggerAlert("Simulated Lightning Alert");
+    }
+});
+
+// Simulate All Clear Button
+simulateClearBtn.addEventListener("click", () => {
+    if (isAlertActive) {
+        clearAlert();
+    } else {
+        playAllClearTone();
+        // FIX: Passing Tailwind class, which is mapped in updateStatus
+        updateStatus("Simulated Clear Tone Played", "bg-amber-400", false, "🎶"); 
+        if (!monitorInterval) {
+            // FIX: Passing Tailwind class, which is mapped in updateStatus
+            setTimeout(() => updateStatus("Awaiting Start", "bg-gray-500", false, "⚪"), 1500);
+        }
+    }
+});
+
+
+window.onload = () => {
+    // Initial UI Setup
+    // FIX: Passing Tailwind class, which is mapped in updateStatus
+    updateStatus("Awaiting Start", "bg-gray-500", false, "⚪");
+    locationSpan.textContent = TARGET_AREA;
+
+    // Initial check for notification status
+    if ("Notification" in window) {
+        const permission = Notification.permission;
+        permissionSpan.textContent = permission.charAt(0).toUpperCase() + permission.slice(1);
+
+        if (permission === "granted") {
+            permissionSpan.className = "text-green-400 font-medium";
+            startBtn.disabled = false;
+            simulateBtn.disabled = false;
+            simulateClearBtn.disabled = false;
+            requestBtn.disabled = true;
+            requestBtn.textContent = "Permission Granted";
+        } else if (permission === "denied") {
+            permissionSpan.className = "text-red-400 font-medium";
+            requestBtn.disabled = true;
+            requestBtn.textContent = "Permission Denied";
+        }
+    }
+    initAudioOnce();
+};
 </script>
 
 </body>
