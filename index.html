@@ -71,7 +71,7 @@ body.light {
 
 /* Map container */
 #map {
-  height: 200px;
+  height: 250px;
   width: 100%;
   border-radius: 0.5rem;
   margin-top: 0.5rem;
@@ -133,24 +133,22 @@ body.light {
 </div>
 
 <script>
-// Leaflet map
-const map = L.map('map').setView([1.3491, 103.9560], 19); // Coordinates of Our Tampines Hub
+// Leaflet map pinned at Tampines Swimming Complex
+const map = L.map('map').setView([1.3524, 103.9445], 13); // Tampines Swimming Complex coords
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
-// 6m radius circle
-const radiusCircle = L.circle([1.3491, 103.9560], {
+// 6 km radius circle
+const radiusCircle = L.circle([1.3524, 103.9445], {
   color: 'red',
   fillColor: '#f03',
-  fillOpacity: 0.3,
-  radius: 6
+  fillOpacity: 0.2,
+  radius: 6000
 }).addTo(map);
-radiusCircle.bindPopup("Monitoring radius: 6 meters");
-
+radiusCircle.bindPopup("Monitoring radius: 6 km");
 </script>
 
-<!-- Lightning alert JS -->
 <script>
 const CHECK_INTERVAL_MS = 30000;
 let monitorInterval = null;
