@@ -8,53 +8,50 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#1C2434">
-
 <style>
-/* --- DARK / LIGHT PASTEL COLOR PALETTE --- */
 :root {
-  --bg-main: #1C2434;
-  --card-bg: #2C3545;
+  --bg-main-dark: #1C2434;
+  --bg-card-dark: #2C3545;
   --accent-blue: #70A0F0;
   --pastel-green: #90EE90;
   --pastel-red: #F08080;
-  color-scheme: dark;
+  
+  --bg-main-light: #f5f5f5;
+  --bg-card-light: #ffffff;
 }
 
-:root.light {
-  --bg-main: #F3F4F6;
-  --card-bg: #FFFFFF;
-  --accent-blue: #2563EB;
-  --pastel-green: #22C55E;
-  --pastel-red: #EF4444;
-  color-scheme: light;
-}
-
-/* Global transition for smooth theme/alert changes */
-html, body, * {
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-}
-
-/* Force background to avoid Tailwind CDN white flash */
-html, body {
-  min-height: 100%;
+body {
   font-family: 'Inter', sans-serif;
-  background-color: var(--bg-main) !important;
+  background-color: var(--bg-main-dark);
+  color: white;
+  transition: background-color 0.3s, color 0.3s;
 }
 
-/* Status Dot & Pulse */
+body.light {
+  background-color: var(--bg-main-light);
+  color: #111827;
+}
+
 .status-dot {
   width: 1.25rem;
   height: 1.25rem;
   border-radius: 50%;
-  transition: background-color 0.25s ease, box-shadow 0.25s ease;
+  transition: all 0.3s;
 }
 
 .pulse-red { animation: pulse-red 1.5s infinite; }
-@keyframes pulse-red {0%{box-shadow:0 0 0 0 rgba(240,128,128,1);}70%{box-shadow:0 0 0 15px rgba(240,128,128,0);}100%{box-shadow:0 0 0 0 rgba(240,128,128,0);}}
+@keyframes pulse-red {
+  0% { box-shadow: 0 0 0 0 rgba(240,128,128,1); }
+  70% { box-shadow: 0 0 0 15px rgba(240,128,128,0); }
+  100% { box-shadow: 0 0 0 0 rgba(240,128,128,0); }
+}
+
 .pulse-green { animation: pulse-green 1.5s infinite; }
-@keyframes pulse-green {0%{box-shadow:0 0 0 0 rgba(144,238,144,1);}70%{box-shadow:0 0 0 15px rgba(144,238,144,0);}100%{box-shadow:0 0 0 0 rgba(144,238,144,0);}}
+@keyframes pulse-green {
+  0% { box-shadow: 0 0 0 0 rgba(144,238,144,1); }
+  70% { box-shadow: 0 0 0 15px rgba(144,238,144,0); }
+  100% { box-shadow: 0 0 0 0 rgba(144,238,144,0); }
+}
 
 .app-button {
   box-shadow: 0 4px 6px -1px rgba(0,0,0,.25);
@@ -65,59 +62,49 @@ html, body {
   transform: translateY(-2px);
   box-shadow: 0 8px 10px -3px rgba(0,0,0,.45);
 }
-.app-button:disabled {
-  opacity: .6;
-  cursor: not-allowed;
-}
+.app-button:disabled { opacity: .6; cursor: not-allowed; }
 </style>
 </head>
+<body class="min-h-screen flex items-center justify-center p-4">
 
-<body class="min-h-screen flex items-center justify-center text-white p-4">
-
-<div class="bg-[var(--card-bg)] p-5 rounded-xl w-full max-w-md shadow-2xl border border-blue-800/50">
-
+<div id="card" class="bg-[var(--bg-card-dark)] p-5 rounded-xl w-full max-w-md shadow-2xl border border-blue-800/50 transition-colors duration-300">
   <div class="flex justify-between items-center mb-4">
-    <h1 class="text-2xl font-bold text-[var(--accent-blue)]">
-      ⚡ Lightning Alert Monitoring
-    </h1>
-    <button id="theme-toggle" class="text-sm px-3 py-1 rounded-lg bg-gray-700/40 hover:bg-gray-700 app-button">🌙</button>
+    <h1 class="text-2xl font-bold text-[var(--accent-blue)]">⚡ Lightning Alert Monitoring</h1>
+    <button id="theme-toggle" class="px-2 py-1 rounded bg-gray-700/50 hover:bg-gray-700">Toggle Theme</button>
   </div>
 
-  <div class="mb-4 flex justify-between items-center bg-gray-900/40 p-3 rounded-lg border border-blue-500/30">
+  <div class="mb-4 flex justify-between items-center bg-gray-900/40 p-3 rounded-lg border border-blue-500/30 transition-colors duration-300">
     <span id="status-message" class="text-lg font-semibold"></span>
     <div id="status-indicator" class="status-dot bg-gray-500"></div>
   </div>
 
   <div class="space-y-2 mb-4 text-sm">
-    <p class="bg-gray-900/40 p-2 rounded border border-gray-700/50">
-      Local Time: <span id="current-time-display" class="text-[var(--accent-blue)] font-medium">--:--:--</span>
+    <p class="bg-gray-900/40 p-2 rounded border border-gray-700/50 transition-colors duration-300">
+      Local Time:
+      <span id="current-time-display" class="text-[var(--accent-blue)] font-medium">--:--:--</span>
     </p>
-    <p class="bg-gray-900/40 p-2 rounded border border-gray-700/50">
-      Location: <span id="current-location" class="text-[var(--accent-blue)] font-medium">Our Tampines Hub</span>
+    <p class="bg-gray-900/40 p-2 rounded border border-gray-700/50 transition-colors duration-300">
+      Location:
+      <span id="current-location" class="text-[var(--accent-blue)] font-medium">Tampines</span>
     </p>
   </div>
 
-  <p class="text-sm mb-4 bg-gray-900/40 p-2 rounded border border-gray-700/50">
-    Notification Status: <span id="current-permission" class="text-yellow-400 font-medium">Unknown</span>
+  <p class="text-sm mb-4 bg-gray-900/40 p-2 rounded border border-gray-700/50 transition-colors duration-300">
+    Notification Status:
+    <span id="current-permission" class="text-yellow-400 font-medium">Unknown</span>
   </p>
 
   <div class="flex flex-col gap-2">
-    <button id="request-permission-btn" class="w-full bg-blue-700/80 p-2 rounded-lg font-semibold app-button">1. Request Notification Permission</button>
-    <button id="start-monitor-btn" disabled class="w-full bg-green-700/80 p-2 rounded-lg font-semibold app-button">2. Start Monitor</button>
-    <button id="simulate-alert-btn" disabled class="w-full bg-red-600/80 p-2 rounded-lg font-semibold app-button">3. Simulate Lightning Alert</button>
+    <button id="request-permission-btn" class="w-full bg-blue-700/80 p-2 rounded-lg font-semibold app-button">Request Notification Permission</button>
+    <button id="start-monitor-btn" disabled class="w-full bg-green-700/80 p-2 rounded-lg font-semibold app-button">Start Monitor</button>
+    <button id="simulate-alert-btn" disabled class="w-full bg-red-600/80 p-2 rounded-lg font-semibold app-button">Simulate Lightning Alert</button>
     <button id="simulate-clear-btn" disabled class="w-full bg-amber-500/80 p-2 rounded-lg font-semibold app-button">Simulate All Clear</button>
     <button id="stop-monitor-btn" disabled class="w-full bg-red-700/80 p-2 rounded-lg font-semibold app-button">Stop Monitor</button>
   </div>
-
 </div>
 
 <script>
-// ====== VARIABLES ======
-const CHECK_INTERVAL_MS = 30000;
-let monitorInterval = null;
-let isAlertActive = false;
-
-// DOM Elements
+// Basic Variables
 const statusMessage = document.getElementById("status-message");
 const statusIndicator = document.getElementById("status-indicator");
 const startBtn = document.getElementById("start-monitor-btn");
@@ -127,85 +114,130 @@ const simulateClearBtn = document.getElementById("simulate-clear-btn");
 const requestBtn = document.getElementById("request-permission-btn");
 const timeSpan = document.getElementById("current-time-display");
 const permissionSpan = document.getElementById("current-permission");
-const locationSpan = document.getElementById("current-location");
 const themeToggle = document.getElementById("theme-toggle");
+const card = document.getElementById("card");
 
-// Colors
-const PASTEL_RED_HEX = "#F08080";
-const PASTEL_GREEN_HEX = "#90EE90";
-const ACCENT_BLUE_VAR = "var(--accent-blue)";
-const COLOR_MAP = {
-  "bg-gray-500": "#6B7280",
-  "bg-amber-500": "#F59E0B",
-  "bg-amber-400": "#FBBE24"
-};
+let isAlertActive = false;
+let monitorInterval = null;
+const CHECK_INTERVAL_MS = 30000;
 
-// ====== TIME ======
-function updateTime() { timeSpan.textContent = new Date().toLocaleTimeString('en-GB'); }
-updateTime(); setInterval(updateTime, 1000);
+// ================= TIME =================
+function updateTime() {
+  timeSpan.textContent = new Date().toLocaleTimeString('en-GB');
+}
+updateTime();
+setInterval(updateTime, 1000);
 
-// ====== STATUS ======
+// ================= STATUS =================
 function updateStatus(text, color, pulse=false, symbol="") {
-  statusMessage.style.opacity = "0"; statusMessage.style.transform="translateY(-4px)";
-  setTimeout(()=>{
-    statusMessage.innerHTML=`<span class="mr-2">${symbol}</span>${text}`;
-    statusIndicator.style.backgroundColor = COLOR_MAP[color] || color;
-    statusIndicator.className="status-dot";
-    if(pulse&&color===PASTEL_RED_HEX) statusIndicator.classList.add("pulse-red");
-    if(pulse&&color===PASTEL_GREEN_HEX) statusIndicator.classList.add("pulse-green");
-    statusMessage.style.opacity="1"; statusMessage.style.transform="translateY(0)";
-  },120);
+  statusMessage.innerHTML = `<span class="mr-2 text-xl">${symbol}</span>${text}`;
+  statusIndicator.style.backgroundColor = color;
+  statusIndicator.classList.remove("pulse-red","pulse-green");
+  if (pulse && color === "#F08080") statusIndicator.classList.add("pulse-red");
+  if (pulse && color === "#90EE90") statusIndicator.classList.add("pulse-green");
 }
 
-// ====== AUDIO ======
-let audioContext=null, ringOscillator=null, ringGain=null, clearOscillator=null, clearGain=null;
-
-function resumeAudioContext(){if(audioContext&&audioContext.state==='suspended')audioContext.resume();}
-function initAudioOnce(){if(audioContext)return;audioContext=new(AudioContext||webkitAudioContext)();ringOscillator=audioContext.createOscillator();ringOscillator.frequency.value=440;ringOscillator.type="sine";ringGain=audioContext.createGain();ringGain.gain.value=0;ringOscillator.connect(ringGain);ringGain.connect(audioContext.destination);ringOscillator.start(0);}
-function stopSound(){if(ringGain&&audioContext){const now=audioContext.currentTime;ringGain.gain.cancelScheduledValues(now);ringGain.gain.setValueAtTime(0,now);}}
-function playAllClearTone(){initAudioOnce();resumeAudioContext();if(!audioContext||audioContext.state!=='running')return;const now=audioContext.currentTime;clearOscillator=audioContext.createOscillator();clearGain=audioContext.createGain();clearOscillator.frequency.value=880;clearOscillator.type="square";clearOscillator.connect(clearGain);clearGain.connect(audioContext.destination);const duration=0.3;clearGain.gain.setValueAtTime(0,now);clearGain.gain.linearRampToValueAtTime(0.4,now+0.05);clearGain.gain.linearRampToValueAtTime(0,now+duration);clearOscillator.start(now);clearOscillator.stop(now+duration);clearOscillator.onended=()=>{if(clearOscillator){clearOscillator.disconnect();clearGain.disconnect();clearOscillator=null;clearGain=null;}}}
-function playPhoneRing(durationMs=8000){initAudioOnce();resumeAudioContext();if(!ringGain||audioContext.state!=='running')return;const now=audioContext.currentTime;ringGain.gain.cancelScheduledValues(now);ringGain.gain.setValueAtTime(0,now);let t=now,end=t+durationMs/1000,interval=0.4;while(t<end){ringGain.gain.setValueAtTime(0.5,t);t+=interval/2;if(t<end){ringGain.gain.setValueAtTime(0,t);t+=interval/2;}}ringGain.gain.setValueAtTime(0,end);}
-
-// ====== ALERTS ======
-function triggerAlert(forecast="Thunderstorm detected"){isAlertActive=true;playPhoneRing();updateStatus("LIGHTNING ALERT",PASTEL_RED_HEX,true,"🚨⛈️");if(Notification.permission==="granted"){new Notification("Lightning Alert",{body:forecast,icon:"https://placehold.co/64x64/F08080/000000?text=⚡️"});}}
-function clearAlert(){stopSound();isAlertActive=false;playAllClearTone();updateStatus("ALL CLEAR: Situation Safe","bg-amber-500",false,"🔔✨");if(Notification.permission==="granted"){new Notification("Lightning Alert Cleared",{body:"The area is now safe. Monitoring is continuing.",icon:"https://placehold.co/64x64/FFBF00/000000?text=🔔"});}}
-
-const API_URL="https://api.data.gov.sg/v1/environment/2-hour-weather-forecast"; const TARGET_AREA="Tampines";
-
-async function checkForecast(){try{const res=await fetch(API_URL);const data=await res.json();const forecastItem=data.items[0];const areaForecast=forecastItem.forecasts.find(f=>f.area.toUpperCase()===TARGET_AREA.toUpperCase());const forecastText=areaForecast?areaForecast.forecast:"Data unavailable";const alertKeywords=["Thunder","TShowers"];const isAlert=alertKeywords.some(k=>forecastText.toLowerCase().includes(k.toLowerCase()));if(isAlert){if(!isAlertActive){triggerAlert(`Forecast: ${forecastText}`);}else{updateStatus("LIGHTNING ALERT",PASTEL_RED_HEX,true,"🚨⛈️");}}else{if(isAlertActive){clearAlert();}else{updateStatus(`Safe: ${forecastText}`,PASTEL_GREEN_HEX,true,"✅☀️");}}}catch(err){updateStatus("Error fetching forecast","bg-amber-500",false,"⚠️");console.error(err);}
-
-// ====== MONITOR ======
-function startMonitor(){initAudioOnce();resumeAudioContext();updateStatus("Monitoring...",ACCENT_BLUE_VAR,false,"🔍");checkForecast();if(monitorInterval)clearInterval(monitorInterval);monitorInterval=setInterval(checkForecast,CHECK_INTERVAL_MS);startBtn.disabled=true;stopBtn.disabled=false;simulateBtn.disabled=true;simulateClearBtn.disabled=true;}
-function stopMonitor(){clearInterval(monitorInterval);monitorInterval=null;stopSound();isAlertActive=false;updateStatus("Stopped","bg-gray-500",false,"🛑");startBtn.disabled=false;stopBtn.disabled=true;simulateBtn.disabled=false;simulateClearBtn.disabled=false;}
-
-// ====== NOTIFICATIONS ======
-function requestPermission(){
-if(!("Notification"in window)){console.error("Notifications unsupported.");permissionSpan.textContent="Unsupported";permissionSpan.className="text-red-400 font-medium";requestBtn.disabled=true;requestBtn.textContent="Notifications Unsupported";return;}
-if(Notification.permission==="denied"){alert("Notifications blocked. Enable in browser settings.");return;}
-Notification.requestPermission().then(permission=>{permissionSpan.textContent=permission.charAt(0).toUpperCase()+permission.slice(1);if(permission==="granted"){permissionSpan.className="text-green-400 font-medium";startBtn.disabled=false;simulateBtn.disabled=false;simulateClearBtn.disabled=false;requestBtn.disabled=true;requestBtn.textContent="Permission Granted";resumeAudioContext();}else if(permission==="denied"){permissionSpan.className="text-red-400 font-medium";requestBtn.disabled=true;requestBtn.textContent="Permission Denied";startBtn.disabled=true;}else{permissionSpan.className="text-yellow-400 font-medium";startBtn.disabled=true;}}).catch(err=>{console.error(err);permissionSpan.textContent="Error";permissionSpan.className="text-red-400 font-medium";});
+// ================= AUDIO =================
+let audioContext, ringOsc, ringGain, clearOsc, clearGain;
+function initAudio() {
+  if(audioContext) return;
+  audioContext = new (window.AudioContext||window.webkitAudioContext)();
+  ringOsc = audioContext.createOscillator();
+  ringOsc.type = "sine"; ringOsc.frequency.value=440;
+  ringGain = audioContext.createGain(); ringGain.gain.value=0;
+  ringOsc.connect(ringGain); ringGain.connect(audioContext.destination);
+  ringOsc.start();
+}
+function playRing(duration=8000){
+  if(!audioContext) return;
+  const now = audioContext.currentTime;
+  ringGain.gain.cancelScheduledValues(now);
+  ringGain.gain.setValueAtTime(0, now);
+  let t = now, end = t + duration/1000, interval=0.4;
+  while(t<end){ ringGain.gain.setValueAtTime(0.5,t); t+=interval/2; if(t<end){ ringGain.gain.setValueAtTime(0,t); t+=interval/2; } }
+  ringGain.gain.setValueAtTime(0,end);
+}
+function stopRing(){ if(ringGain){ const now=audioContext.currentTime; ringGain.gain.cancelScheduledValues(now); ringGain.gain.setValueAtTime(0,now);} }
+function playAllClear(){
+  initAudio();
+  const now = audioContext.currentTime;
+  clearOsc = audioContext.createOscillator();
+  clearGain = audioContext.createGain();
+  clearOsc.type="square"; clearOsc.frequency.value=880;
+  clearOsc.connect(clearGain); clearGain.connect(audioContext.destination);
+  clearGain.gain.setValueAtTime(0,now);
+  clearGain.gain.linearRampToValueAtTime(0.4,now+0.05);
+  clearGain.gain.linearRampToValueAtTime(0,now+0.3);
+  clearOsc.start(now); clearOsc.stop(now+0.3);
 }
 
-// ====== EVENT LISTENERS ======
-requestBtn.addEventListener("click",requestPermission);
+// ================= ALERTS =================
+function triggerAlert(text="Thunderstorm detected"){
+  isAlertActive=true;
+  playRing();
+  updateStatus("LIGHTNING ALERT","#F08080",true,"🚨⛈️");
+  if(Notification.permission==="granted"){ new Notification("Lightning Alert",{body:text, icon:"https://placehold.co/64x64/F08080/000000?text=⚡️"}); }
+}
+function clearAlert(){
+  stopRing(); isAlertActive=false;
+  playAllClear();
+  updateStatus("ALL CLEAR: Situation Safe","#FBBE24",false,"🔔✨");
+  if(Notification.permission==="granted"){ new Notification("Lightning Alert Cleared",{body:"Area safe.", icon:"https://placehold.co/64x64/FFBF00/000000?text=🔔"});}
+}
+
+// ================= MONITOR =================
+const API_URL="https://api.data.gov.sg/v1/environment/2-hour-weather-forecast";
+const TARGET_AREA="Tampines";
+
+async function checkForecast(){
+  try{
+    const res = await fetch(API_URL);
+    const data = await res.json();
+    const forecastItem = data.items[0];
+    const areaForecast = forecastItem.forecasts.find(f=>f.area.toUpperCase()===TARGET_AREA.toUpperCase());
+    const forecastText = areaForecast ? areaForecast.forecast : "Data unavailable";
+    const alertKeywords=["Thunder","TShowers"];
+    const isAlert=alertKeywords.some(k=>forecastText.toLowerCase().includes(k.toLowerCase()));
+    if(isAlert){ if(!isAlertActive) triggerAlert(`Forecast: ${forecastText}`); else updateStatus("LIGHTNING ALERT","#F08080",true,"🚨⛈️"); }
+    else{ if(isAlertActive) clearAlert(); else updateStatus(`Safe: ${forecastText}`,"#90EE90",true,"✅☀️"); }
+  }catch(e){ updateStatus("Error fetching forecast","#FBBE24",false,"⚠️"); console.error(e); }
+}
+
+function startMonitor(){ initAudio(); updateStatus("Monitoring...","var(--accent-blue)",false,"🔍"); checkForecast(); if(monitorInterval) clearInterval(monitorInterval); monitorInterval=setInterval(checkForecast,CHECK_INTERVAL_MS); startBtn.disabled=true; stopBtn.disabled=false; simulateBtn.disabled=true; simulateClearBtn.disabled=true; }
+function stopMonitor(){ clearInterval(monitorInterval); monitorInterval=null; stopRing(); isAlertActive=false; updateStatus("Stopped","#6B7280",false,"🛑"); startBtn.disabled=false; stopBtn.disabled=true; simulateBtn.disabled=false; simulateClearBtn.disabled=false; }
+
+// ================= NOTIFICATIONS =================
+requestBtn.addEventListener("click", async()=>{
+  if(!("Notification" in window)){ alert("Browser does not support notifications"); return; }
+  try{
+    const permission = await Notification.requestPermission();
+    permissionSpan.textContent=permission.charAt(0).toUpperCase()+permission.slice(1);
+    if(permission==="granted"){ permissionSpan.className="text-green-400 font-medium"; startBtn.disabled=false; simulateBtn.disabled=false; simulateClearBtn.disabled=false; requestBtn.disabled=true; requestBtn.textContent="Permission Granted"; }
+    else if(permission==="denied"){ permissionSpan.className="text-red-400 font-medium"; requestBtn.disabled=true; requestBtn.textContent="Permission Denied"; startBtn.disabled=true; }
+    else{ permissionSpan.className="text-yellow-400 font-medium"; }
+  }catch(e){ console.error(e); permissionSpan.textContent="Error"; permissionSpan.className="text-red-400 font-medium";}
+});
+
+// ================= BUTTONS =================
 startBtn.addEventListener("click",startMonitor);
 stopBtn.addEventListener("click",stopMonitor);
-simulateBtn.addEventListener("click",()=>{if(!isAlertActive){initAudioOnce();resumeAudioContext();triggerAlert("Simulated Lightning Alert");}});
-simulateClearBtn.addEventListener("click",()=>{if(isAlertActive){clearAlert();}else{playAllClearTone();updateStatus("Simulated Clear Tone Played","bg-amber-400",false,"🎶");if(!monitorInterval)setTimeout(()=>updateStatus("Awaiting Start","bg-gray-500",false,"⚪"),1500);}});
+simulateBtn.addEventListener("click",()=>{ if(!isAlertActive){ initAudio(); playRing(); updateStatus("LIGHTNING ALERT","#F08080",true,"🚨⛈️"); } });
+simulateClearBtn.addEventListener("click",()=>{ if(isAlertActive) clearAlert(); else{ playAllClear(); updateStatus("Simulated Clear Tone","#FBBE24",false,"🎶"); }});
 
-// ====== THEME TOGGLE ======
-function setTheme(theme){document.documentElement.classList.toggle("light",theme==="light");localStorage.setItem("theme",theme);themeToggle.textContent=theme==="light"?"🌞":"🌙";}
-themeToggle.addEventListener("click",()=>{const isLight=document.documentElement.classList.contains("light");setTheme(isLight?"dark":"light");});
-setTheme(localStorage.getItem("theme")||"dark");
+// ================= THEME TOGGLE =================
+themeToggle.addEventListener("click",()=>{
+  document.body.classList.toggle("light");
+  if(document.body.classList.contains("light")){
+    card.style.backgroundColor="var(--bg-card-light)";
+  } else {
+    card.style.backgroundColor="var(--bg-card-dark)";
+  }
+});
 
-// ====== INIT ======
+// ================= INIT =================
 window.onload=()=>{
-updateStatus("Awaiting Start","bg-gray-500",false,"⚪");
-locationSpan.textContent=TARGET_AREA;
-if("Notification"in window){const permission=Notification.permission;permissionSpan.textContent=permission.charAt(0).toUpperCase()+permission.slice(1);if(permission==="granted"){permissionSpan.className="text-green-400 font-medium";startBtn.disabled=false;simulateBtn.disabled=false;simulateClearBtn.disabled=false;requestBtn.disabled=true;requestBtn.textContent="Permission Granted";}else if(permission==="denied"){permissionSpan.className="text-red-400 font-medium";requestBtn.disabled=true;requestBtn.textContent="Permission Denied";}}
-initAudioOnce();
-
-// ===== PWA Service Worker Registration =====
-if("serviceWorker"in navigator){navigator.serviceWorker.register("./sw.js");}
+  updateStatus("Awaiting Start","#6B7280",false,"⚪");
+  initAudio();
 };
 </script>
 
