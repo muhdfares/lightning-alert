@@ -11,7 +11,7 @@
 <style>
 :root {
   --bg-main: #1C2434;
-  --card-bg: rgba(44, 53, 69, 0.75); /* transparent to show bg text */
+  --card-bg: rgba(44,53,69,0.75);
   --accent-blue: #70A0F0;
   --pastel-green: #90EE90;
   --pastel-red: #F08080;
@@ -19,18 +19,22 @@
 
 body {
   font-family: 'Inter', sans-serif;
-  background: url("bg.jpg") center top / contain no-repeat fixed;
-  position: relative;
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-main);
+  color: white;
   min-height: 100vh;
-  overflow-x: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  background: url("bg.jpg") center top no-repeat;
+  background-size: contain;
 }
 
-/* Subtle overlay for readability */
-body::before {
-  content: "";
+.bg-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 20, 30, 0.35);
+  background: rgba(28,36,52,0.6);
   z-index: -1;
 }
 
@@ -42,28 +46,17 @@ body::before {
 }
 
 .pulse-red { animation: pulse-red 1.5s infinite; }
-@keyframes pulse-red {
-  0% { box-shadow: 0 0 0 0 rgba(240,128,128,1); }
-  70% { box-shadow: 0 0 0 15px rgba(240,128,128,0); }
-  100% { box-shadow: 0 0 0 0 rgba(240,128,128,0); }
-}
+@keyframes pulse-red { 0%{box-shadow:0 0 0 0 rgba(240,128,128,1);} 70%{box-shadow:0 0 0 15px rgba(240,128,128,0);} 100%{box-shadow:0 0 0 0 rgba(240,128,128,0);} }
 
 .pulse-green { animation: pulse-green 1.5s infinite; }
-@keyframes pulse-green {
-  0% { box-shadow: 0 0 0 0 rgba(144,238,144,1); }
-  70% { box-shadow: 0 0 0 15px rgba(144,238,144,0); }
-  100% { box-shadow: 0 0 0 0 rgba(144,238,144,0); }
-}
+@keyframes pulse-green { 0%{box-shadow:0 0 0 0 rgba(144,238,144,1);} 70%{box-shadow:0 0 0 15px rgba(144,238,144,0);} 100%{box-shadow:0 0 0 0 rgba(144,238,144,0);} }
 
 .app-button {
   box-shadow: 0 4px 6px -1px rgba(0,0,0,.25);
   transition: transform .15s, box-shadow .15s;
   border: 1px solid rgba(255,255,255,.1);
 }
-.app-button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 10px -3px rgba(0,0,0,.45);
-}
+.app-button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 10px -3px rgba(0,0,0,.45); }
 .app-button:disabled { opacity: .6; cursor: not-allowed; }
 
 .toggle-button {
@@ -74,56 +67,58 @@ body::before {
   font-weight: bold;
   border-radius: 0.5rem;
 }
+
+.bg-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(4px);
+  border-radius: 1rem;
+  color: white;
+}
 </style>
 </head>
+<body>
 
-<body class="text-white p-4 flex flex-col items-center">
+<div class="bg-overlay"></div>
 
-<!-- LOGO SECTION -->
-<div class="w-full flex justify-center pt-20 pb-6">
-  <img src="logo.png" 
-       alt="Our Tampines Hub Logo" 
-       class="h-36 w-auto drop-shadow-2xl">
-</div>
+<div class="flex flex-col items-center w-full max-w-xl p-4 pt-24">
+  <img src="logo.png" alt="Our Tampines Hub Logo" class="h-40 w-auto drop-shadow-2xl mb-6">
 
-<!-- MAIN CARD -->
-<div class="bg-[var(--card-bg)] backdrop-blur-md p-6 mt-8 rounded-xl w-full max-w-md mx-auto shadow-2xl border border-blue-800/40">
+  <div class="bg-card p-6 w-full shadow-2xl border border-blue-800/50">
+    <h1 class="text-2xl font-bold mb-4 text-[var(--accent-blue)]">⚡ Lightning Alert Monitoring</h1>
 
-  <h1 class="text-2xl font-bold mb-4 text-[var(--accent-blue)]">⚡ Lightning Alert Monitoring</h1>
+    <div class="mb-4 flex justify-between items-center bg-gray-900/40 p-3 rounded-lg border border-blue-500/30">
+      <span id="status-message" class="text-lg font-semibold"></span>
+      <div id="status-indicator" class="status-dot bg-gray-500"></div>
+    </div>
 
-  <div class="mb-4 flex justify-between items-center bg-gray-900/40 p-3 rounded-lg border border-blue-500/30">
-    <span id="status-message" class="text-lg font-semibold"></span>
-    <div id="status-indicator" class="status-dot bg-gray-500"></div>
-  </div>
+    <div class="space-y-2 mb-4 text-sm">
+      <p class="bg-gray-900/40 p-2 rounded border border-gray-700/50">
+        Local Time: <span id="current-time-display" class="text-[var(--accent-blue)] font-medium">--:--:--</span>
+      </p>
+      <p class="bg-gray-900/40 p-2 rounded border border-gray-700/50">
+        Location: <span id="current-location" class="text-[var(--accent-blue)] font-medium">Our Tampines Hub</span>
+      </p>
+      <p class="bg-gray-900/40 p-2 rounded border border-gray-700/50">
+        Temperature: <span id="current-temp" class="text-[var(--accent-blue)] font-medium">--°C</span>
+      </p>
+    </div>
 
-  <div class="space-y-2 mb-4 text-sm">
-    <p class="bg-gray-900/40 p-2 rounded border border-gray-700/50">
-      Local Time: <span id="current-time-display" class="text-[var(--accent-blue)] font-medium">--:--:--</span>
+    <p class="text-sm mb-4 bg-gray-900/40 p-2 rounded border border-gray-700/50">
+      Notification Status: <span id="current-permission" class="text-yellow-400 font-medium">Unknown</span>
     </p>
-    <p class="bg-gray-900/40 p-2 rounded border border-gray-700/50">
-      Location: <span class="text-[var(--accent-blue)] font-medium">Our Tampines Hub</span>
-    </p>
-    <p class="bg-gray-900/40 p-2 rounded border border-gray-700/50">
-      Alert Sensitivity: <span class="text-yellow-300 font-medium">8 km Radius</span>
-    </p>
+
+    <div class="flex justify-between mb-2 gap-2">
+      <button id="simulate-alert-btn" disabled class="w-1/2 bg-red-600/80 p-2 rounded-lg font-semibold app-button">🚨 Simulate Alert</button>
+      <button id="simulate-clear-btn" disabled class="w-1/2 bg-amber-500/80 p-2 rounded-lg font-semibold app-button">🔔 All Clear</button>
+    </div>
+
+    <div class="flex flex-col gap-2">
+      <button id="request-permission-btn" class="w-full bg-blue-700/80 p-2 rounded-lg font-semibold app-button">1. Request Notification</button>
+      <button id="start-monitor-btn" disabled class="w-full bg-green-700/80 p-2 rounded-lg font-semibold app-button">2. Start Monitor</button>
+      <button id="stop-monitor-btn" disabled class="w-full bg-red-700/80 p-2 rounded-lg font-semibold app-button">Stop Monitor</button>
+      <button id="toggle-dark-btn" class="toggle-button mt-2">Toggle Dark/Light</button>
+    </div>
   </div>
-
-  <p class="text-sm mb-4 bg-gray-900/40 p-2 rounded border border-gray-700/50">
-    Notification Status: <span id="current-permission" class="text-yellow-400 font-medium">Unknown</span>
-  </p>
-
-  <div class="flex justify-between mb-2 gap-2">
-    <button id="simulate-alert-btn" disabled class="w-1/2 bg-red-600/80 p-2 rounded-lg font-semibold app-button">🚨 Simulate Alert</button>
-    <button id="simulate-clear-btn" disabled class="w-1/2 bg-amber-500/80 p-2 rounded-lg font-semibold app-button">🔔 All Clear</button>
-  </div>
-
-  <div class="flex flex-col gap-2">
-    <button id="request-permission-btn" class="w-full bg-blue-700/80 p-2 rounded-lg font-semibold app-button">1. Request Notification</button>
-    <button id="start-monitor-btn" disabled class="w-full bg-green-700/80 p-2 rounded-lg font-semibold app-button">2. Start Monitor</button>
-    <button id="stop-monitor-btn" disabled class="w-full bg-red-700/80 p-2 rounded-lg font-semibold app-button">Stop Monitor</button>
-    <button id="toggle-dark-btn" class="toggle-button mt-2">Toggle Dark/Light</button>
-  </div>
-
 </div>
 
 <script>
@@ -145,18 +140,19 @@ const simulateClearBtn = document.getElementById("simulate-clear-btn");
 const requestBtn = document.getElementById("request-permission-btn");
 const timeSpan = document.getElementById("current-time-display");
 const permissionSpan = document.getElementById("current-permission");
+const tempSpan = document.getElementById("current-temp");
 const toggleDarkBtn = document.getElementById("toggle-dark-btn");
 
 let audioContext = null;
 let ringOscillator = null;
 let ringGain = null;
 
-// Time display
+// ===================== Time Display =====================
 function updateTime() { timeSpan.textContent = new Date().toLocaleTimeString('en-GB'); }
 updateTime();
 setInterval(updateTime, 1000);
 
-// Status UI
+// ===================== Status UI =====================
 function updateStatus(text, color, pulse=false, symbol=""){
   statusMessage.innerHTML = `<span class="mr-2 text-xl leading-none">${symbol}</span>${text}`;
   statusIndicator.className = "status-dot";
@@ -166,7 +162,7 @@ function updateStatus(text, color, pulse=false, symbol=""){
   if(pulse && color===PASTEL_GREEN_HEX) statusIndicator.classList.add("pulse-green");
 }
 
-// Audio
+// ===================== Audio =====================
 function initAudioOnce() {
   if(audioContext) return;
   audioContext = new (window.AudioContext||window.webkitAudioContext)();
@@ -183,9 +179,11 @@ function resumeAudioContext(){ if(audioContext && audioContext.state==='suspende
 function stopSound(){ if(ringGain){ const now = audioContext.currentTime; ringGain.gain.cancelScheduledValues(now); ringGain.gain.setValueAtTime(0, now); } }
 
 function playLightningAlert(){
-  initAudioOnce(); resumeAudioContext();
+  initAudioOnce();
+  resumeAudioContext();
   if(!ringGain || !audioContext) return;
-  const duration = 3; let t = audioContext.currentTime, end = t+duration;
+  const duration = 3;
+  let t = audioContext.currentTime, end = t+duration;
   const interval = 0.4;
   ringGain.gain.cancelScheduledValues(t);
   ringGain.gain.setValueAtTime(0,t);
@@ -197,11 +195,12 @@ function playLightningAlert(){
 }
 
 function playAllClearTone(){
-  initAudioOnce(); resumeAudioContext();
+  initAudioOnce();
+  resumeAudioContext();
   if(!audioContext || audioContext.state!=='running') return;
   const now = audioContext.currentTime;
   const duration = 3;
-  const notes = [880,1046,1318]; 
+  const notes = [880,1046,1318];
   const noteDuration = duration/notes.length;
   notes.forEach((freq,index)=>{
     const osc = audioContext.createOscillator();
@@ -218,64 +217,31 @@ function playAllClearTone(){
   });
 }
 
-// Alerts
+// ===================== Alert Logic =====================
 function triggerAlert(forecast="Thunderstorm detected"){
-  isAlertActive=true; playLightningAlert();
+  isAlertActive=true;
+  playLightningAlert();
   updateStatus("LIGHTNING ALERT",PASTEL_RED_HEX,true,"🚨⛈️");
   if(Notification.permission==="granted"){
     new Notification("Lightning Alert",{body:forecast,icon:"https://placehold.co/64x64/F08080/000000?text=⚡️"});
   }
 }
+
 function clearAlert(){
-  stopSound(); isAlertActive=false; playAllClearTone();
+  stopSound();
+  isAlertActive=false;
+  playAllClearTone();
   updateStatus("ALL CLEAR: Situation Safe",PASTEL_GREEN_HEX,true,"🔔✨");
   if(Notification.permission==="granted"){
     new Notification("Lightning Alert Cleared",{body:"Area is now safe.",icon:"https://placehold.co/64x64/FFBF00/000000?text=🔔"});
   }
 }
 
-// Monitor Control
-function startMonitor(){ 
-  initAudioOnce(); resumeAudioContext();
-  updateStatus("Monitoring...",ACCENT_BLUE_VAR,false,"🔍");
-  checkForecast();
-  if(monitorInterval) clearInterval(monitorInterval);
-  monitorInterval=setInterval(checkForecast,CHECK_INTERVAL_MS);
-  startBtn.disabled=true; stopBtn.disabled=false;
-  simulateBtn.disabled=true; simulateClearBtn.disabled=true;
-}
-function stopMonitor(){ 
-  clearInterval(monitorInterval); monitorInterval=null;
-  stopSound(); isAlertActive=false;
-  updateStatus("Stopped","bg-gray-500",false,"🛑");
-  startBtn.disabled=false; stopBtn.disabled=true;
-  simulateBtn.disabled=false; simulateClearBtn.disabled=false;
-}
-
-// Notification Permission
-function requestPermission(){
-  if(!("Notification" in window)){
-    permissionSpan.textContent="Unsupported";
-    permissionSpan.className="text-red-400 font-medium";
-    requestBtn.disabled=true;
-    return;
-  }
-  Notification.requestPermission().then(permission=>{
-    permissionSpan.textContent=permission.charAt(0).toUpperCase()+permission.slice(1);
-    if(permission==="granted"){
-      permissionSpan.className="text-green-400 font-medium";
-      startBtn.disabled=false; simulateBtn.disabled=false; simulateClearBtn.disabled=false;
-      requestBtn.disabled=true;
-      resumeAudioContext();
-    } else if(permission==="denied"){
-      permissionSpan.className="text-red-400 font-medium"; requestBtn.disabled=true; startBtn.disabled=true;
-    } else { permissionSpan.className="text-yellow-400 font-medium"; startBtn.disabled=true; }
-  });
-}
-
-// Forecast
+// ===================== Fetch Forecast =====================
 const API_URL="https://api.data.gov.sg/v1/environment/2-hour-weather-forecast";
+const TEMP_API="https://api.data.gov.sg/v1/environment/air-temperature";
 const TARGET_AREA="Tampines";
+
 async function checkForecast(){
   try{
     const res=await fetch(API_URL);
@@ -305,12 +271,77 @@ async function checkForecast(){
     updateStatus("Error fetching forecast", "bg-amber-500", false, "⚠️");
     console.error(err);
   }
+
+  // ===================== Temperature =====================
+  try{
+    const tempRes = await fetch(TEMP_API);
+    const tempData = await tempRes.json();
+    const tempReading = tempData.items[0].readings.find(r => r.station_id==="S109");
+    const tempValue = tempReading ? tempReading.value : null;
+    if(tempValue !== null){
+      tempSpan.textContent = `${tempValue}°C`;
+      if(tempValue < 25){
+        tempSpan.style.color = "#70C0F0"; // blue
+      } else if(tempValue <= 30){
+        tempSpan.style.color = "#90EE90"; // green
+      } else {
+        tempSpan.style.color = "#F08080"; // red
+      }
+    } else {
+      tempSpan.textContent = "--°C";
+      tempSpan.style.color = "var(--accent-blue)";
+    }
+  } catch(err){
+    tempSpan.textContent="N/A";
+    tempSpan.style.color = "var(--accent-blue)";
+    console.error("Temp error:", err);
+  }
 }
 
-// Event listeners
+// ===================== Monitor Control =====================
+function startMonitor(){ 
+  initAudioOnce(); resumeAudioContext();
+  updateStatus("Monitoring...",ACCENT_BLUE_VAR,false,"🔍");
+  checkForecast();
+  if(monitorInterval) clearInterval(monitorInterval);
+  monitorInterval=setInterval(checkForecast,CHECK_INTERVAL_MS);
+  startBtn.disabled=true; stopBtn.disabled=false;
+  simulateBtn.disabled=true; simulateClearBtn.disabled=true;
+}
+function stopMonitor(){ 
+  clearInterval(monitorInterval); monitorInterval=null;
+  stopSound(); isAlertActive=false;
+  updateStatus("Stopped","bg-gray-500",false,"🛑");
+  startBtn.disabled=false; stopBtn.disabled=true;
+  simulateBtn.disabled=false; simulateClearBtn.disabled=false;
+}
+
+// ===================== Notification Permission =====================
+function requestPermission(){
+  if(!("Notification" in window)){
+    permissionSpan.textContent="Unsupported";
+    permissionSpan.className="text-red-400 font-medium";
+    requestBtn.disabled=true;
+    return;
+  }
+  Notification.requestPermission().then(permission=>{
+    permissionSpan.textContent=permission.charAt(0).toUpperCase()+permission.slice(1);
+    if(permission==="granted"){
+      permissionSpan.className="text-green-400 font-medium";
+      startBtn.disabled=false; simulateBtn.disabled=false; simulateClearBtn.disabled=false;
+      requestBtn.disabled=true;
+      resumeAudioContext();
+    } else if(permission==="denied"){
+      permissionSpan.className="text-red-400 font-medium"; requestBtn.disabled=true; startBtn.disabled=true;
+    } else { permissionSpan.className="text-yellow-400 font-medium"; startBtn.disabled=true; }
+  });
+}
+
+// ===================== Event Listeners =====================
 requestBtn.addEventListener("click", requestPermission);
 startBtn.addEventListener("click", startMonitor);
 stopBtn.addEventListener("click", stopMonitor);
+
 simulateBtn.addEventListener("click",()=>{ if(!isAlertActive){ triggerAlert("Simulated Lightning Alert"); }});
 simulateClearBtn.addEventListener("click",()=>{ if(isAlertActive){ clearAlert(); } else { playAllClearTone(); updateStatus("Simulated Clear Tone Played",PASTEL_GREEN_HEX,false,"🎶"); }});
 
@@ -324,7 +355,7 @@ toggleDarkBtn.addEventListener("click",()=>{
   }
 });
 
-// Init
+// ===================== Initialization =====================
 window.onload = () => {
   updateStatus("Awaiting Start","bg-gray-500",false,"⚪");
   timeSpan.textContent=new Date().toLocaleTimeString('en-GB');
@@ -335,6 +366,7 @@ window.onload = () => {
     else if(permission==="denied"){ permissionSpan.className="text-red-400 font-medium"; requestBtn.disabled=true; requestBtn.textContent="Permission Denied"; }
   }
   initAudioOnce();
+  checkForecast();
 };
 </script>
 
